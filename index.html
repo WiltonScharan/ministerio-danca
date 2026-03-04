@@ -642,7 +642,18 @@ window.removeCostumeItem = async function(costumeId, kid){
   await remove(ref(db,`costumes/${costumeId}/items/${kid}`));
 };
 
-// ─── MODAL HELPERS ────────────────────────────────────────────────────────────
+window.maskPhone = function(el){
+  let v = el.value.replace(/\D/g,"").slice(0,11);
+  if(v.length > 10)
+    v = v.replace(/^(\d{2})(\d{5})(\d{4})$/,"($1) $2-$3");
+  else if(v.length > 6)
+    v = v.replace(/^(\d{2})(\d{4})(\d*)$/,"($1) $2-$3");
+  else if(v.length > 2)
+    v = v.replace(/^(\d{2})(\d*)$/,"($1) $2");
+  else if(v.length > 0)
+    v = v.replace(/^(\d*)$/,"($1");
+  el.value = v;
+};
 function openModal(id){ document.getElementById(id).classList.add("open"); }
 function closeModal(id){ document.getElementById(id).classList.remove("open"); }
 window.closeModal = closeModal;
@@ -730,8 +741,8 @@ render();
           <option value="auxiliar">🤝 Auxiliar</option>
         </select>
       </div>
-      <div class="field"><label>WhatsApp da bailarina</label><input id="member-whatsapp" placeholder="(11) 99999-9999"></div>
-      <div class="field"><label>WhatsApp da mãe</label><input id="member-whatsapp-mae" placeholder="(11) 99999-9999"></div>
+      <div class="field"><label>WhatsApp da bailarina</label><input id="member-whatsapp" placeholder="(11) 99999-9999" oninput="maskPhone(this)"></div>
+      <div class="field"><label>WhatsApp da mãe</label><input id="member-whatsapp-mae" placeholder="(11) 99999-9999" oninput="maskPhone(this)"></div>
       <div class="field" style="display:flex;align-items:center;gap:8px">
         <input type="checkbox" id="member-active" checked style="width:16px;height:16px;cursor:pointer;accent-color:var(--p);flex-shrink:0">
         <label for="member-active" style="margin:0;font-size:14px;color:var(--text);font-weight:600;cursor:pointer">Membro ativa</label>
