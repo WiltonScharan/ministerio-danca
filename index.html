@@ -391,8 +391,8 @@ window.openPlayer = function(id, encodedUrl){
   const url=decodeURIComponent(encodedUrl), lt=linkType(url), yt=ytId(url), sp=spotifyEmbed(url);
   const label=lt==="youtube"?"▶ YouTube":"🎧 Spotify";
   let iframe="";
-  if(lt==="youtube"&&yt) iframe=`<div class="player-wrap"><iframe src="https://www.youtube.com/embed/${yt}?autoplay=1" allow="autoplay;encrypted-media" allowfullscreen></iframe></div>`;
-  else if(lt==="spotify"&&sp) iframe=`<iframe class="player" height="152" src="${sp}" allow="autoplay;encrypted-media" style="width:100%;border:none;display:block"></iframe>`;
+  if(lt==="youtube"&&yt) iframe=`<iframe src="https://www.youtube.com/embed/${yt}?autoplay=1" allow="autoplay;encrypted-media" allowfullscreen></iframe>`;
+  else if(lt==="spotify"&&sp) iframe=`<iframe src="${sp}" height="152" allow="autoplay;encrypted-media"></iframe>`;
   else iframe=`<div style="padding:12px;text-align:center"><a href="${esc(url)}" target="_blank" style="color:var(--p)">Abrir link externo ↗</a></div>`;
   document.getElementById(`media-${id}`).innerHTML=`
     <div class="media-player-wrap">
