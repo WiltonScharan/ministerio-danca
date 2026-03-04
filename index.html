@@ -78,21 +78,16 @@
 
   .warn-bar{padding:8px 16px;background:#fff3e0;border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:#E65100}
 
-  .media-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .media-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
   .media-open{border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;color:#fff}
   .media-link{background:#f3e5f5;color:var(--d);border:1px solid var(--border);border-radius:8px;padding:7px 14px;font-size:13px;font-weight:700;text-decoration:none}
-  .media-player-wrap{border-radius:10px;overflow:hidden;border:1px solid var(--border);margin-top:10px}
+  .media-player-wrap{border-radius:10px;overflow:hidden;border:1px solid var(--border);margin-top:8px}
   .media-player-bar{background:var(--light);padding:6px 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);font-size:12px;color:var(--muted);font-weight:600}
   .media-player-bar a{color:var(--p);font-weight:600;font-size:12px}
   .media-player-bar button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px}
   iframe.player{width:100%;border:none;display:block}
 
   .empty{text-align:center;padding:40px;color:var(--muted)}
-  .yt-thumb{position:relative;background:#000;cursor:pointer}
-  .yt-thumb img{width:100%;max-height:160px;object-fit:cover;display:block;opacity:.85}
-  .yt-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
-  .yt-play-btn{width:48px;height:48px;border-radius:50%;background:#FF0000cc;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff}
-
   .inactive-label{font-size:13px;font-weight:700;color:var(--muted);margin:18px 0 8px}
   .link-detected{font-size:12px;margin-top:4px;font-weight:600}
 
@@ -107,7 +102,6 @@
   .bday-date{font-size:22px;font-weight:800;color:var(--p);min-width:36px;text-align:center;line-height:1}
   .bday-date span{display:block;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase}
   .wpp-btn{display:inline-flex;align-items:center;gap:5px;background:#25D366;color:#fff;border:none;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;text-decoration:none}
-  .wpp-btn svg{flex-shrink:0}
 </style>
 </head>
 <body>
@@ -212,25 +206,30 @@ function render(){
   document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
   document.getElementById(`panel-${activeTab}`)?.classList.add("active");
   renderSummary();
-  if(activeTab==="members")       renderMembers();
+  if(activeTab==="members")         renderMembers();
   else if(activeTab==="attendance") renderAttendance();
-  else if(activeTab==="choreo")   renderChoreo();
-  else if(activeTab==="costumes") renderCostumes();
+  else if(activeTab==="choreo")     renderChoreo();
+  else if(activeTab==="costumes")   renderCostumes();
   else if(activeTab==="aniversarios") renderAniversarios();
 }
 
 function renderSummary(){
-  const am = activeMembers().length;
-  const ensaios = Object.keys(state.attendance).length;
-  const emEnsaio = Object.values(state.choreographies).filter(c=>c.status==="em_ensaio").length;
-  const figs = Object.keys(state.costumes).length;
-  document.getElementById("sum-bailarinas").textContent = am;
-  document.getElementById("sum-ensaios").textContent = ensaios;
-  document.getElementById("sum-coreografias").textContent = emEnsaio;
-  document.getElementById("sum-figurinos").textContent = figs;
+  document.getElementById("sum-bailarinas").textContent = activeMembers().length;
+  document.getElementById("sum-ensaios").textContent = Object.keys(state.attendance).length;
+  document.getElementById("sum-coreografias").textContent = Object.values(state.choreographies).filter(c=>c.status==="em_ensaio").length;
+  document.getElementById("sum-figurinos").textContent = Object.keys(state.costumes).length;
 }
 
 // ── MEMBERS ───────────────────────────────────────────────────────────────────
+function wppLink(num, label, name, isMae){
+  const clean = num.replace(/\D/g,"");
+  const msg = isMae
+    ? encodeURIComponent(`🎂 Feliz aniversário para ${name}! Que Deus a abençoe! 🎉`)
+    : "";
+  const wppIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.116 1.524 5.847L0 24l6.344-1.498A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.651-.502-5.176-1.381l-.371-.22-3.768.89.937-3.658-.242-.381A9.944 9.944 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>`;
+  return `<a class="wpp-btn" href="https://wa.me/55${clean}" target="_blank">${wppIcon} ${label}</a>`;
+}
+
 function renderMembers(){
   const all = Object.entries(state.members).map(([id,m])=>({id,...m}));
   const active = all.filter(m=>m.active);
@@ -253,13 +252,7 @@ function renderMembers(){
 }
 
 function memberCard(m){
-  const wppBtn = (num, label) => {
-    const clean = num.replace(/\D/g,"");
-    return `<a class="wpp-btn" href="https://wa.me/55${clean}" target="_blank">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.116 1.524 5.847L0 24l6.344-1.498A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.651-.502-5.176-1.381l-.371-.22-3.768.89.937-3.658-.242-.381A9.944 9.944 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
-      ${label}</a>`;
-  };
-  const bdayFmt = m.dataNascimento ? (() => { const [y,mo,d]=m.dataNascimento.split("-"); return `${d}/${mo}/${y}`; })() : "";
+  const bdayFmt = m.dataNascimento ? (()=>{ const [y,mo,d]=m.dataNascimento.split("-"); return `${d}/${mo}/${y}`; })() : "";
   return `<div class="card" style="display:flex;align-items:center;gap:12px">
     <div class="avatar" style="width:38px;height:38px;font-size:14px;background:${avatarColor(m.name)}">${initials(m.name)}</div>
     <div style="flex:1">
@@ -267,8 +260,8 @@ function memberCard(m){
       <div style="font-size:12px;color:var(--muted)">${ROLE_LABEL[m.role]||"🩰 Bailarina"}${m.mother?` · 👩 ${esc(m.mother)}`:""}</div>
       ${bdayFmt?`<div style="font-size:12px;color:var(--muted)">🎂 ${bdayFmt}</div>`:""}
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
-        ${m.whatsapp?wppBtn(m.whatsapp,"Bailarina"):""}
-        ${m.whatsappMae?wppBtn(m.whatsappMae,"Mãe"):""}
+        ${m.whatsapp?wppLink(m.whatsapp,"Bailarina",m.name,false):""}
+        ${m.whatsappMae?wppLink(m.whatsappMae,"Mãe",m.name,true):""}
       </div>
     </div>
     <div style="display:flex;gap:6px">
@@ -363,13 +356,11 @@ window.saveSession = async function(){
   const date=document.getElementById("att-date").value;
   if(!date){ alert("Selecione a data"); return; }
   const notes=document.getElementById("att-notes").value.trim();
-  const am=activeMembers();
-  const records={};
+  const am=activeMembers(); const records={};
   am.forEach(m=>{ const k=push(ref(db,"_tmp")).key; records[k]={memberId:m.id,present:false}; });
   const newRef=push(ref(db,"attendance"));
   await set(newRef,{date,notes,records});
-  selectedSession=newRef.key;
-  closeModal("modal-att");
+  selectedSession=newRef.key; closeModal("modal-att");
 };
 window.selectSession = function(id){ selectedSession=selectedSession===id?null:id; renderAttendance(); };
 window.toggleAttendance = async function(sessionId,memberId){
@@ -384,6 +375,44 @@ window.deleteSession = async function(id){
 };
 
 // ── CHOREO ────────────────────────────────────────────────────────────────────
+function renderMediaBtns(id, url, btnLabel, extLabel){
+  const lt=linkType(url);
+  const color=lt==="youtube"?"#FF0000":lt==="spotify"?"#1DB954":"#C9607E";
+  const lbl = btnLabel || (lt==="youtube"?"▶ Assistir aqui":lt==="spotify"?"🎧 Ouvir aqui":"▶ Abrir");
+  const ext = extLabel || (lt==="youtube"?"↗ Abrir no YouTube":lt==="spotify"?"↗ Abrir no Spotify":"↗ Abrir link");
+  return `<div class="media-btns">
+    <button class="media-open" style="background:${color}" onclick="openPlayer('${id}','${encodeURIComponent(url)}')">${lbl}</button>
+    <a class="media-link" href="${esc(url)}" target="_blank">${ext}</a>
+  </div>`;
+}
+
+window.openPlayer = function(id, encodedUrl){
+  const url=decodeURIComponent(encodedUrl), lt=linkType(url), yt=ytId(url), sp=spotifyEmbed(url);
+  const label=lt==="youtube"?"▶ YouTube":"🎧 Spotify";
+  let iframe="";
+  if(lt==="youtube"&&yt) iframe=`<iframe class="player" height="220" src="https://www.youtube.com/embed/${yt}?autoplay=1" allow="autoplay;encrypted-media" allowfullscreen></iframe>`;
+  else if(lt==="spotify"&&sp) iframe=`<iframe class="player" height="152" src="${sp}" allow="autoplay;encrypted-media"></iframe>`;
+  else iframe=`<div style="padding:12px;text-align:center"><a href="${esc(url)}" target="_blank" style="color:var(--p)">Abrir link externo ↗</a></div>`;
+  document.getElementById(`media-${id}`).innerHTML=`
+    <div class="media-player-wrap">
+      <div class="media-player-bar"><span>${label}</span>
+        <div style="display:flex;gap:8px">
+          <a href="${esc(url)}" target="_blank">↗ Abrir</a>
+          <button onclick="closePlayer('${id}','${encodeURIComponent(url)}')">✕</button>
+        </div>
+      </div>${iframe}</div>`;
+};
+window.closePlayer = function(id, encodedUrl){
+  const url=decodeURIComponent(encodedUrl);
+  // Detect if this is the "gravacao" slot
+  const isGrav = id.startsWith("grav-");
+  if(isGrav){
+    document.getElementById(`media-${id}`).innerHTML=renderMediaBtns(id, url, "🩰 Ver Gravação da Dança", "↗ Abrir");
+  } else {
+    document.getElementById(`media-${id}`).innerHTML=renderMediaBtns(id, url);
+  }
+};
+
 function renderChoreo(){
   const all=Object.entries(state.choreographies).map(([id,c])=>({id,...c}));
   const list=choreoFilter==="all"?all:all.filter(c=>c.status===choreoFilter);
@@ -398,19 +427,19 @@ function renderChoreo(){
         `<div class="filter-chip${choreoFilter===k?" active":""}" onclick="setChoreoFilter('${k}')">${ic} ${l}</div>`).join("")}
     </div>
     ${list.map(c=>{
-      const yt=ytId(c.link), lt=linkType(c.link);
+      const lt=linkType(c.link);
       const displayTitle=c.title&&c.title!==c.link?c.title:(lt==="youtube"?"Hino no YouTube":lt==="spotify"?"Hino no Spotify":"Hino");
       return `<div style="background:#fff;border-radius:14px;border:1px solid var(--border);margin-bottom:14px;overflow:hidden">
         <div style="padding:14px 16px">
           <div style="display:flex;justify-content:space-between;gap:8px">
             <div style="flex:1">
-              <div style="font-weight:700;font-size:17px;margin-bottom:6px">🎶 ${esc(displayTitle)}</div>
+              <div style="font-weight:700;font-size:16px;margin-bottom:6px">🎶 ${esc(displayTitle)}</div>
               ${c.event?`<div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px">📅 ${esc(c.event)}</div>`:""}
               ${c.notes?`<div style="font-size:14px;color:var(--muted);font-style:italic;margin-bottom:6px">"${esc(c.notes)}"</div>`:""}
-              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px">
-                ${c.link?`<span style="font-size:12px;border-radius:20px;padding:3px 10px;font-weight:700;background:${lt==="youtube"?"#FF000022":lt==="spotify"?"#1DB95422":"#eee"};color:${lt==="youtube"?"#cc0000":lt==="spotify"?"#1DB954":"var(--muted)"}">
-                  ${lt==="youtube"?"▶ Hino – YouTube":lt==="spotify"?"🎧 Hino – Spotify":"🔗 Hino"}</span>`:""}
-                ${c.linkGravacao?`<span style="font-size:12px;border-radius:20px;padding:3px 10px;font-weight:700;background:#C9607E22;color:var(--p)">🩰 Gravação da Dança</span>`:""}
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                ${c.link?`<span style="font-size:11px;border-radius:20px;padding:2px 8px;font-weight:700;background:${lt==="youtube"?"#FF000022":lt==="spotify"?"#1DB95422":"#eee"};color:${lt==="youtube"?"#cc0000":lt==="spotify"?"#1DB954":"var(--muted)"}">
+                  ${lt==="youtube"?"▶ YouTube":lt==="spotify"?"🎧 Spotify":"🔗 Link"}</span>`:""}
+                ${c.linkGravacao?`<span style="font-size:11px;border-radius:20px;padding:2px 8px;font-weight:700;background:#C9607E22;color:var(--p)">🩰 Gravação da Dança</span>`:""}
               </div>
             </div>
             <div style="display:flex;gap:6px">
@@ -418,10 +447,10 @@ function renderChoreo(){
               <button class="btn btn-danger btn-sm" onclick="deleteChoreo('${c.id}')">🗑️</button>
             </div>
           </div>
-          <div style="margin-top:8px">${badge(c.status,"choreo")}</div>
-          <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
-            ${c.link?`<div id="media-${c.id}">${renderMediaBtns(c.id, c.link, "▶ Ouvir Hino", "🎵")}</div>`:""}
-            ${c.linkGravacao?`<div id="media-grav-${c.id}">${renderMediaBtns("grav-"+c.id, c.linkGravacao, "🩰 Ver Gravação da Dança", "🩰")}</div>`:""}
+          <div style="margin-top:10px">${badge(c.status,"choreo")}</div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            ${c.link?`<div id="media-${c.id}">${renderMediaBtns(c.id, c.link, "▶ Ouvir Hino", "↗ Abrir no YouTube")}</div>`:""}
+            ${c.linkGravacao?`<div id="media-grav-${c.id}">${renderMediaBtns("grav-"+c.id, c.linkGravacao, "🩰 Ver Gravação da Dança", "↗ Abrir")}</div>`:""}
           </div>
         </div>
         <div class="card-footer">
@@ -438,30 +467,8 @@ function renderChoreo(){
   `;
 }
 
-function renderMediaBtns(id, url, label, icon){
-  const lt=linkType(url);
-  const btnLabel = label || (lt==="youtube"?"▶ Assistir aqui":lt==="spotify"?"🎧 Ouvir aqui":"▶ Abrir");
-  const extLabel = lt==="youtube"?"↗ YouTube":lt==="spotify"?"↗ Spotify":"↗ Abrir";
-  const color = lt==="youtube"?"#FF0000":lt==="spotify"?"#1DB954":"#C9607E";
-  return `<div class="media-btns">
-    <button class="media-open" style="background:${color}" onclick="openPlayer('${id}','${encodeURIComponent(url)}')">${btnLabel}</button>
-    <a class="media-link" href="${esc(url)}" target="_blank">${extLabel}</a>
-  </div>`;
-}
-window.openPlayer = function(id,encodedUrl){
-  const url=decodeURIComponent(encodedUrl), lt=linkType(url), yt=ytId(url), sp=spotifyEmbed(url);
-  let iframe="";
-  if(lt==="youtube"&&yt) iframe=`<iframe class="player" height="200" src="https://www.youtube.com/embed/${yt}?autoplay=1" allow="autoplay;encrypted-media" allowfullscreen></iframe>`;
-  else if(lt==="spotify"&&sp) iframe=`<iframe class="player" height="152" src="${sp}" allow="autoplay;encrypted-media"></iframe>`;
-  else iframe=`<div style="padding:12px;text-align:center"><a href="${esc(url)}" target="_blank" style="color:var(--p)">Abrir link externo ↗</a></div>`;
-  document.getElementById(`media-${id}`).innerHTML=`
-    <div class="media-player-wrap">
-      <div class="media-player-bar"><span>${lt==="youtube"?"▶ YouTube":"🎧 Spotify"}</span>
-        <div style="display:flex;gap:8px"><a href="${esc(url)}" target="_blank">↗ Abrir</a>
-        <button onclick="closePlayer('${id}','${encodeURIComponent(url)}')">✕</button></div></div>${iframe}</div>`;
-};
-window.closePlayer = function(id,encodedUrl){ document.getElementById(`media-${id}`).innerHTML=renderMediaBtns(id,decodeURIComponent(encodedUrl)); };
 window.setChoreoFilter = function(f){ choreoFilter=f; renderChoreo(); };
+
 window.openChoreoModal = function(id){
   const c=id?state.choreographies[id]:null;
   document.getElementById("choreo-modal-title").textContent=c?"Editar Coreografia":"Nova Coreografia";
@@ -475,24 +482,32 @@ window.openChoreoModal = function(id){
   document.getElementById("choreo-link-hint").textContent="";
   openModal("modal-choreo");
 };
+
+window.onChoreoLinkChange = function(){
+  const url=document.getElementById("choreo-link").value, lt=linkType(url);
+  const hint=document.getElementById("choreo-link-hint");
+  if(!url){ hint.textContent=""; return; }
+  if(lt==="youtube"){ hint.textContent="▶ Link do YouTube detectado"; hint.style.color="#cc0000"; }
+  else if(lt==="spotify"){ hint.textContent="🎧 Link do Spotify detectado"; hint.style.color="#1DB954"; }
+  else { hint.textContent="🔗 Link externo"; hint.style.color="var(--muted)"; }
+};
+
 window.saveChoreo = async function(){
   const id=document.getElementById("choreo-id").value;
   const link=document.getElementById("choreo-link").value.trim();
   const linkGravacao=document.getElementById("choreo-link-gravacao").value.trim();
   const title=document.getElementById("choreo-title").value.trim()||link;
   if(!link&&!title){ alert("Cole o link ou informe um nome"); return; }
-  const data={link,linkGravacao,title,event:document.getElementById("choreo-event").value.trim(),status:document.getElementById("choreo-status").value,notes:document.getElementById("choreo-notes").value.trim(),createdAt:new Date().toISOString().slice(0,10)};
+  const data={link,linkGravacao,title,
+    event:document.getElementById("choreo-event").value.trim(),
+    status:document.getElementById("choreo-status").value,
+    notes:document.getElementById("choreo-notes").value.trim(),
+    createdAt:new Date().toISOString().slice(0,10)};
   if(id) await set(ref(db,`choreographies/${id}`),data);
   else   await push(ref(db,"choreographies"),data);
   closeModal("modal-choreo");
 };
-window.onChoreoLinkChange = function(){
-  const url=document.getElementById("choreo-link").value, lt=linkType(url), hint=document.getElementById("choreo-link-hint");
-  if(!url){ hint.textContent=""; return; }
-  if(lt==="youtube"){ hint.textContent="▶ Link do YouTube detectado"; hint.style.color="#cc0000"; }
-  else if(lt==="spotify"){ hint.textContent="🎧 Link do Spotify detectado"; hint.style.color="#1DB954"; }
-  else { hint.textContent="🔗 Link externo"; hint.style.color="var(--muted)"; }
-}; = async function(id,status){ await update(ref(db,`choreographies/${id}`),{status}); };
+window.updateChoreoStatus = async function(id,status){ await update(ref(db,`choreographies/${id}`),{status}); };
 window.deleteChoreo = async function(id){ if(confirm("Remover coreografia?")) await remove(ref(db,`choreographies/${id}`)); };
 
 // ── COSTUMES ──────────────────────────────────────────────────────────────────
@@ -510,7 +525,8 @@ function renderCostumes(){
       return `<div style="background:#fff;border-radius:14px;border:1px solid var(--border);margin-bottom:16px;overflow:hidden">
         <div class="card-header">
           <div style="display:flex;align-items:center;gap:10px">${tutuSVG(30,"#fff")}
-            <div><div style="font-weight:700;font-size:16px">${esc(c.name)}</div>${c.description?`<div style="font-size:12px;opacity:.85">${esc(c.description)}</div>`:""}</div></div>
+            <div><div style="font-weight:700;font-size:16px">${esc(c.name)}</div>
+              ${c.description?`<div style="font-size:12px;opacity:.85">${esc(c.description)}</div>`:""}</div></div>
           <div style="display:flex;gap:6px">
             <button class="btn-icon" onclick="openRecordModal('${c.id}')">+ Registrar</button>
             <button class="btn-icon" onclick="openCostumeModal('${c.id}')">✏️</button>
@@ -582,98 +598,72 @@ window.removeCostumeItem = async function(costumeId,kid){ await remove(ref(db,`c
 
 // ── ANIVERSÁRIOS ──────────────────────────────────────────────────────────────
 function renderAniversarios(){
-  const el = document.getElementById("panel-aniversarios");
-  const today = new Date();
-  const todayDay = today.getDate(), todayMonth = today.getMonth()+1;
+  const el=document.getElementById("panel-aniversarios");
+  const today=new Date(), todayDay=today.getDate(), todayMonth=today.getMonth()+1;
+  const all=Object.entries(state.members).map(([id,m])=>({id,...m})).filter(m=>m.active&&m.dataNascimento);
 
-  const all = Object.entries(state.members)
-    .map(([id,m])=>({id,...m}))
-    .filter(m => m.active && m.dataNascimento);
-
-  if(all.length === 0){
-    el.innerHTML = `<div class="sec-title"><div><h2>🎂 Aniversariantes</h2></div></div>
+  if(all.length===0){
+    el.innerHTML=`<div class="sec-title"><div><h2>🎂 Aniversariantes</h2></div></div>
       <div class="empty"><div style="font-size:48px;margin-bottom:8px">🎂</div><p>Cadastre datas de nascimento nos membros para ver aqui</p></div>`;
     return;
   }
 
-  // Sort by month/day
-  all.sort((a,b)=>{
-    const [,am,ad]=a.dataNascimento.split("-").map(Number);
-    const [,bm,bd]=b.dataNascimento.split("-").map(Number);
-    return am!==bm ? am-bm : ad-bd;
-  });
+  all.sort((a,b)=>{ const [,am,ad]=a.dataNascimento.split("-").map(Number),[,bm,bd]=b.dataNascimento.split("-").map(Number); return am!==bm?am-bm:ad-bd; });
+  const todayBdays=all.filter(m=>{ const [,mo,d]=m.dataNascimento.split("-").map(Number); return mo===todayMonth&&d===todayDay; });
+  const byMonth={};
+  all.forEach(m=>{ const [,mo]=m.dataNascimento.split("-").map(Number); if(!byMonth[mo]) byMonth[mo]=[]; byMonth[mo].push(m); });
 
-  // Find today's birthdays
-  const todayBdays = all.filter(m=>{
-    const [,mo,d]=m.dataNascimento.split("-").map(Number);
-    return mo===todayMonth && d===todayDay;
-  });
+  const wppIcon=`<svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.116 1.524 5.847L0 24l6.344-1.498A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.651-.502-5.176-1.381l-.371-.22-3.768.89.937-3.658-.242-.381A9.944 9.944 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>`;
 
-  // Group by month
-  const byMonth = {};
-  all.forEach(m=>{
-    const [,mo]=m.dataNascimento.split("-").map(Number);
-    if(!byMonth[mo]) byMonth[mo]=[];
-    byMonth[mo].push(m);
-  });
-
-  const wppBtn = (num, name) => {
-    const clean = num.replace(/\D/g,"");
-    const msg = encodeURIComponent(`🎂 Feliz aniversário, ${name}! Que Deus te abençoe muito! 🎉`);
-    return `<a class="wpp-btn" href="https://wa.me/55${clean}?text=${msg}" target="_blank">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.116 1.524 5.847L0 24l6.344-1.498A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.651-.502-5.176-1.381l-.371-.22-3.768.89.937-3.658-.242-.381A9.944 9.944 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
-      WhatsApp</a>`;
+  const bdayWppBtn=(num,label,bg,name)=>{
+    const clean=num.replace(/\D/g,"");
+    const msg=encodeURIComponent(`🎂 Feliz aniversário, ${name}! Que Deus te abençoe muito! 🎉`);
+    return `<a class="wpp-btn" style="background:${bg}" href="https://wa.me/55${clean}?text=${msg}" target="_blank">${wppIcon} ${label}</a>`;
   };
 
-  let html = `<div class="sec-title"><div><h2>🎂 Aniversariantes</h2><p>${all.length} membro(s) com data cadastrada</p></div></div>`;
+  let html=`<div class="sec-title"><div><h2>🎂 Aniversariantes</h2><p>${all.length} membro(s) com data cadastrada</p></div></div>`;
 
-  // Today's birthday banner
-  if(todayBdays.length > 0){
-    todayBdays.forEach(m => {
+  if(todayBdays.length>0){
+    todayBdays.forEach(m=>{
       const [y]=m.dataNascimento.split("-").map(Number);
-      const age = today.getFullYear()-y;
-      html += `<div class="bday-today">
+      const age=today.getFullYear()-y;
+      html+=`<div class="bday-today">
         <div class="bday-emoji">🎉</div>
         <h3>Hoje é aniversário de ${esc(m.name)}!</h3>
         <p>${age} anos · ${ROLE_LABEL[m.role]||"🩰 Bailarina"}</p>
         <div style="display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap">
-          ${m.whatsapp?wppBtn(m.whatsapp, m.name):""}
-          ${m.whatsappMae?`<a class="wpp-btn" style="background:#854278" href="https://wa.me/55${m.whatsappMae.replace(/\D/g,"")}?text=${encodeURIComponent(`🎂 Feliz aniversário para ${esc(m.name)}! Que Deus a abençoe muito! 🎉`)}" target="_blank">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.116 1.524 5.847L0 24l6.344-1.498A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.651-.502-5.176-1.381l-.371-.22-3.768.89.937-3.658-.242-.381A9.944 9.944 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
-            Mãe</a>`:""}
+          ${m.whatsapp?bdayWppBtn(m.whatsapp,"Bailarina","#25D366",m.name):""}
+          ${m.whatsappMae?bdayWppBtn(m.whatsappMae,"Mãe","#854278",m.name):""}
         </div>
       </div>`;
     });
   }
 
-  // List by month
   Object.keys(byMonth).sort((a,b)=>a-b).forEach(mo=>{
-    html += `<div class="month-label">📅 ${MONTHS_PT[mo-1]}</div>`;
+    html+=`<div class="month-label">📅 ${MONTHS_PT[mo-1]}</div>`;
     byMonth[mo].forEach(m=>{
       const [y,,d]=m.dataNascimento.split("-").map(Number);
-      const age = today.getFullYear()-y;
-      const isToday = Number(mo)===todayMonth && d===todayDay;
-      html += `<div class="bday-card${isToday?" today":""}">
+      const age=today.getFullYear()-y;
+      const isToday=Number(mo)===todayMonth&&d===todayDay;
+      html+=`<div class="bday-card${isToday?" today":""}">
         <div class="bday-date">${String(d).padStart(2,"0")}<span>${MONTHS_PT[mo-1].slice(0,3)}</span></div>
         <div class="avatar" style="width:36px;height:36px;font-size:13px;background:${avatarColor(m.name)}">${initials(m.name)}</div>
         <div style="flex:1">
-          <div style="font-weight:700;font-size:14px">${esc(m.name)}${isToday?' 🎉':''}</div>
+          <div style="font-weight:700;font-size:14px">${esc(m.name)}${isToday?" 🎉":""}</div>
           <div style="font-size:12px;color:var(--muted)">${age} anos · ${ROLE_LABEL[m.role]||"🩰 Bailarina"}</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
-            ${m.whatsapp?wppBtn(m.whatsapp, m.name):""}
-            ${m.whatsappMae?`<a class="wpp-btn" style="background:#854278" href="https://wa.me/55${m.whatsappMae.replace(/\D/g,"")}?text=${encodeURIComponent(`🎂 Feliz aniversário para ${m.name}! Que Deus a abençoe! 🎉`)}" target="_blank">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.116 1.524 5.847L0 24l6.344-1.498A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.651-.502-5.176-1.381l-.371-.22-3.768.89.937-3.658-.242-.381A9.944 9.944 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
-              Mãe</a>`:""}
+            ${m.whatsapp?bdayWppBtn(m.whatsapp,"Bailarina","#25D366",m.name):""}
+            ${m.whatsappMae?bdayWppBtn(m.whatsappMae,"Mãe","#854278",m.name):""}
           </div>
         </div>
       </div>`;
     });
   });
 
-  el.innerHTML = html;
+  el.innerHTML=html;
 }
 
-// ─── MODAL HELPERS ────────────────────────────────────────────────────────────
+// ─── MODAL / TAB HELPERS ──────────────────────────────────────────────────────
 function openModal(id){ document.getElementById(id).classList.add("open"); }
 function closeModal(id){ document.getElementById(id).classList.remove("open"); }
 window.closeModal = closeModal;
@@ -685,7 +675,7 @@ document.querySelectorAll(".tab-btn").forEach(b=>{
 render();
 </script>
 
-<!-- HTML -->
+<!-- ─── HTML ─────────────────────────────────────────────────────────────── -->
 <div id="header">
   <div id="header-top">
     <svg width="42" height="42" viewBox="0 0 32 32">
@@ -800,10 +790,10 @@ render();
         <div class="link-detected" id="choreo-link-hint"></div>
       </div>
       <div class="field"><label>🩰 Link da gravação da dança (opcional)</label>
-        <input id="choreo-link-gravacao" placeholder="Cole aqui o link do vídeo gravado da dança">
+        <input id="choreo-link-gravacao" placeholder="Cole o link do vídeo gravado da dança">
       </div>
       <div class="field"><label>Nome do hino (opcional)</label><input id="choreo-title" placeholder="Ex: Tua Graça Me Sustenta"></div>
-      <div class="field"><label>Evento / culto</label><input id="choreo-event" placeholder="Ex: Culto de Domingo – 15/06"></div>
+      <div class="field"><label>Evento / culto de apresentação</label><input id="choreo-event" placeholder="Ex: Culto de Domingo – 15/06"></div>
       <div class="field"><label>Status</label>
         <select id="choreo-status">
           <option value="planejado">📋 Planejado</option>
