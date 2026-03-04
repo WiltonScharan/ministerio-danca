@@ -85,7 +85,8 @@
   .media-player-bar{background:var(--light);padding:6px 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);font-size:12px;color:var(--muted);font-weight:600}
   .media-player-bar a{color:var(--p);font-weight:600;font-size:12px}
   .media-player-bar button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px}
-  iframe.player{width:100%;border:none;display:block}
+  .player-wrap{position:relative;width:100%;padding-bottom:56.25%}
+  .player-wrap iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none}
 
   .empty{text-align:center;padding:40px;color:var(--muted)}
   .inactive-label{font-size:13px;font-weight:700;color:var(--muted);margin:18px 0 8px}
@@ -390,8 +391,8 @@ window.openPlayer = function(id, encodedUrl){
   const url=decodeURIComponent(encodedUrl), lt=linkType(url), yt=ytId(url), sp=spotifyEmbed(url);
   const label=lt==="youtube"?"▶ YouTube":"🎧 Spotify";
   let iframe="";
-  if(lt==="youtube"&&yt) iframe=`<iframe class="player" height="220" src="https://www.youtube.com/embed/${yt}?autoplay=1" allow="autoplay;encrypted-media" allowfullscreen></iframe>`;
-  else if(lt==="spotify"&&sp) iframe=`<iframe class="player" height="152" src="${sp}" allow="autoplay;encrypted-media"></iframe>`;
+  if(lt==="youtube"&&yt) iframe=`<div class="player-wrap"><iframe src="https://www.youtube.com/embed/${yt}?autoplay=1" allow="autoplay;encrypted-media" allowfullscreen></iframe></div>`;
+  else if(lt==="spotify"&&sp) iframe=`<iframe class="player" height="152" src="${sp}" allow="autoplay;encrypted-media" style="width:100%;border:none;display:block"></iframe>`;
   else iframe=`<div style="padding:12px;text-align:center"><a href="${esc(url)}" target="_blank" style="color:var(--p)">Abrir link externo ↗</a></div>`;
   document.getElementById(`media-${id}`).innerHTML=`
     <div class="media-player-wrap">
@@ -435,7 +436,7 @@ function renderChoreo(){
             <div style="flex:1">
               <div style="font-weight:700;font-size:16px;margin-bottom:6px">🎶 ${esc(displayTitle)}</div>
               ${c.event?`<div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px">📅 ${esc(c.event)}</div>`:""}
-              ${c.notes?`<div style="font-size:14px;color:var(--muted);font-style:italic;margin-bottom:6px">"${esc(c.notes)}"</div>`:""}
+              ${c.notes?`<div style="font-size:14px;color:#555;font-style:italic;margin-bottom:6px;padding:8px 10px;background:#fdf0f5;border-left:3px solid var(--p);border-radius:4px">${esc(c.notes)}</div>`:""}
               <div style="display:flex;gap:6px;flex-wrap:wrap">
                 ${c.link?`<span style="font-size:11px;border-radius:20px;padding:2px 8px;font-weight:700;background:${lt==="youtube"?"#FF000022":lt==="spotify"?"#1DB95422":"#eee"};color:${lt==="youtube"?"#cc0000":lt==="spotify"?"#1DB954":"var(--muted)"}">
                   ${lt==="youtube"?"▶ YouTube":lt==="spotify"?"🎧 Spotify":"🔗 Link"}</span>`:""}
