@@ -732,11 +732,9 @@ render();
       </div>
       <div class="field"><label>WhatsApp da bailarina</label><input id="member-whatsapp" placeholder="(11) 99999-9999"></div>
       <div class="field"><label>WhatsApp da mãe</label><input id="member-whatsapp-mae" placeholder="(11) 99999-9999"></div>
-      <div class="field">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-          <input type="checkbox" id="member-active" checked>
-          <span style="color:var(--text);font-weight:600">Membro ativa</span>
-        </label>
+      <div class="field" style="display:flex;align-items:center;gap:8px">
+        <input type="checkbox" id="member-active" checked style="width:16px;height:16px;cursor:pointer;accent-color:var(--p);flex-shrink:0">
+        <label for="member-active" style="margin:0;font-size:14px;color:var(--text);font-weight:600;cursor:pointer">Membro ativa</label>
       </div>
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="closeModal('modal-member')">Cancelar</button>
