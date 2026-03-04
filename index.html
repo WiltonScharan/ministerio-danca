@@ -85,8 +85,6 @@
   .media-player-bar{background:var(--light);padding:6px 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);font-size:12px;color:var(--muted);font-weight:600}
   .media-player-bar a{color:var(--p);font-weight:600;font-size:12px}
   .media-player-bar button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px}
-  .player-wrap{position:relative;width:100%;max-width:420px;padding-bottom:min(56.25%, 236px)}
-  .player-wrap iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none}
 
   .empty{text-align:center;padding:40px;color:var(--muted)}
   .inactive-label{font-size:13px;font-weight:700;color:var(--muted);margin:18px 0 8px}
@@ -391,9 +389,13 @@ window.openPlayer = function(id, encodedUrl){
   const url=decodeURIComponent(encodedUrl), lt=linkType(url), yt=ytId(url), sp=spotifyEmbed(url);
   const label=lt==="youtube"?"▶ YouTube":"🎧 Spotify";
   let iframe="";
-  if(lt==="youtube"&&yt) iframe=`<iframe src="https://www.youtube.com/embed/${yt}?autoplay=1" allow="autoplay;encrypted-media" allowfullscreen></iframe>`;
-  else if(lt==="spotify"&&sp) iframe=`<iframe src="${sp}" height="152" allow="autoplay;encrypted-media"></iframe>`;
-  else iframe=`<div style="padding:12px;text-align:center"><a href="${esc(url)}" target="_blank" style="color:var(--p)">Abrir link externo ↗</a></div>`;
+  if(lt==="youtube"&&yt){
+    iframe=`<div style="position:relative;width:100%;padding-bottom:56.25%;height:0;overflow:hidden"><iframe style="position:absolute;top:0;left:0;width:100%;height:100%;border:none" src="https://www.youtube.com/embed/${yt}?autoplay=1" allow="autoplay;encrypted-media" allowfullscreen></iframe></div>`;
+  } else if(lt==="spotify"&&sp){
+    iframe=`<iframe src="${sp}" height="152" allow="autoplay;encrypted-media" style="width:100%;border:none"></iframe>`;
+  } else {
+    iframe=`<div style="padding:12px;text-align:center"><a href="${esc(url)}" target="_blank" style="color:var(--p)">Abrir link externo ↗</a></div>`;
+  }
   document.getElementById(`media-${id}`).innerHTML=`
     <div class="media-player-wrap">
       <div class="media-player-bar"><span>${label}</span>
@@ -405,7 +407,6 @@ window.openPlayer = function(id, encodedUrl){
 };
 window.closePlayer = function(id, encodedUrl){
   const url=decodeURIComponent(encodedUrl);
-  // Detect if this is the "gravacao" slot
   const isGrav = id.startsWith("grav-");
   if(isGrav){
     document.getElementById(`media-${id}`).innerHTML=renderMediaBtns(id, url, "🩰 Ver Gravação da Dança", "↗ Abrir");
