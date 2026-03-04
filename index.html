@@ -261,7 +261,13 @@ function renderMembers(){
         <div class="avatar" style="width:38px;height:38px;font-size:14px;background:${avatarColor(m.name)}">${initials(m.name)}</div>
         <div style="flex:1">
           <div style="font-weight:700;font-size:15px">${esc(m.name)}</div>
-          <div style="font-size:12px;color:var(--muted)">${m.role==="lider"?"👑 Líder":"🩰 Bailarina"}${m.whatsapp?` · 📱 ${esc(m.whatsapp)}`:""}</div>
+          <div style="font-size:12px;color:var(--muted)">
+              ${{lider:"👑 Líder",co_lider:"🌟 Co-líder",auxiliar:"🤝 Auxiliar"}[m.role]||"🩰 Bailarina"}
+              ${m.mother?` · 👩 ${esc(m.mother)}`:""}
+            </div>
+            <div style="font-size:12px;color:var(--muted)">
+              ${m.whatsapp?`📱 ${esc(m.whatsapp)}`:""}${m.whatsapp&&m.whatsappMae?" · ":""}${m.whatsappMae?`👩 ${esc(m.whatsappMae)}`:""}
+            </div>
         </div>
         <button class="btn btn-ghost btn-sm" onclick="openMemberModal('${m.id}')">✏️</button>
         <button class="btn btn-danger btn-sm" onclick="deleteMember('${m.id}')">🗑️</button>
@@ -293,8 +299,11 @@ window.saveMember = async function(){
   const name = document.getElementById("member-name").value.trim();
   if(!name){ alert("Nome obrigatório"); return; }
   const data = {
-    name, role: document.getElementById("member-role").value,
+    name,
+    mother: document.getElementById("member-mother").value.trim(),
+    role: document.getElementById("member-role").value,
     whatsapp: document.getElementById("member-whatsapp").value.trim(),
+    whatsappMae: document.getElementById("member-whatsapp-mae").value.trim(),
     active: document.getElementById("member-active").checked
   };
   if(id) await set(ref(db,`members/${id}`), data);
@@ -712,12 +721,22 @@ render();
     <div class="modal-body">
       <input type="hidden" id="member-id">
       <div class="field"><label>Nome completo *</label><input id="member-name" placeholder="Ex: Maria Silva"></div>
+      <div class="field"><label>Nome da mãe</label><input id="member-mother" placeholder="Ex: Ana Silva"></div>
       <div class="field"><label>Função</label>
-        <select id="member-role"><option value="membro">🩰 Bailarina</option><option value="lider">👑 Líder</option></select></div>
-      <div class="field"><label>WhatsApp</label><input id="member-whatsapp" placeholder="(11) 99999-9999"></div>
-      <div class="field" style="display:flex;align-items:center;gap:8px">
-        <input type="checkbox" id="member-active" checked>
-        <label for="member-active" style="margin:0;color:var(--text)">Membro ativa</label>
+        <select id="member-role">
+          <option value="membro">🩰 Bailarina</option>
+          <option value="lider">👑 Líder</option>
+          <option value="co_lider">🌟 Co-líder</option>
+          <option value="auxiliar">🤝 Auxiliar</option>
+        </select>
+      </div>
+      <div class="field"><label>WhatsApp da bailarina</label><input id="member-whatsapp" placeholder="(11) 99999-9999"></div>
+      <div class="field"><label>WhatsApp da mãe</label><input id="member-whatsapp-mae" placeholder="(11) 99999-9999"></div>
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="member-active" checked>
+          <span style="color:var(--text);font-weight:600">Membro ativa</span>
+        </label>
       </div>
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="closeModal('modal-member')">Cancelar</button>
