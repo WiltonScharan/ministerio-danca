@@ -401,23 +401,28 @@ function renderChoreo(){
       const yt=ytId(c.link), lt=linkType(c.link);
       const displayTitle=c.title&&c.title!==c.link?c.title:(lt==="youtube"?"Hino no YouTube":lt==="spotify"?"Hino no Spotify":"Hino");
       return `<div style="background:#fff;border-radius:14px;border:1px solid var(--border);margin-bottom:14px;overflow:hidden">
-        ${lt==="youtube"&&yt?`<div class="yt-thumb"><img src="https://img.youtube.com/vi/${yt}/hqdefault.jpg" alt="thumb"><div class="yt-play"><div class="yt-play-btn">▶</div></div></div>`:""}
         <div style="padding:14px 16px">
           <div style="display:flex;justify-content:space-between;gap:8px">
             <div style="flex:1">
-              <div style="font-weight:700;font-size:16px;margin-bottom:4px">🎶 ${esc(displayTitle)}</div>
-              ${c.event?`<div style="font-size:13px;color:var(--muted);margin-bottom:4px">📅 ${esc(c.event)}</div>`:""}
-              ${c.notes?`<div style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:4px">"${esc(c.notes)}"</div>`:""}
-              ${c.link?`<span style="font-size:11px;border-radius:20px;padding:2px 8px;font-weight:700;background:${lt==="youtube"?"#FF000022":lt==="spotify"?"#1DB95422":"#eee"};color:${lt==="youtube"?"#cc0000":lt==="spotify"?"#1DB954":"var(--muted)"}">
-                ${lt==="youtube"?"▶ YouTube":lt==="spotify"?"🎧 Spotify":"🔗 Link"}</span>`:""}
+              <div style="font-weight:700;font-size:17px;margin-bottom:6px">🎶 ${esc(displayTitle)}</div>
+              ${c.event?`<div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px">📅 ${esc(c.event)}</div>`:""}
+              ${c.notes?`<div style="font-size:14px;color:var(--muted);font-style:italic;margin-bottom:6px">"${esc(c.notes)}"</div>`:""}
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px">
+                ${c.link?`<span style="font-size:12px;border-radius:20px;padding:3px 10px;font-weight:700;background:${lt==="youtube"?"#FF000022":lt==="spotify"?"#1DB95422":"#eee"};color:${lt==="youtube"?"#cc0000":lt==="spotify"?"#1DB954":"var(--muted)"}">
+                  ${lt==="youtube"?"▶ Hino – YouTube":lt==="spotify"?"🎧 Hino – Spotify":"🔗 Hino"}</span>`:""}
+                ${c.linkGravacao?`<span style="font-size:12px;border-radius:20px;padding:3px 10px;font-weight:700;background:#C9607E22;color:var(--p)">🩰 Gravação da Dança</span>`:""}
+              </div>
             </div>
             <div style="display:flex;gap:6px">
               <button class="btn btn-ghost btn-sm" onclick="openChoreoModal('${c.id}')">✏️</button>
               <button class="btn btn-danger btn-sm" onclick="deleteChoreo('${c.id}')">🗑️</button>
             </div>
           </div>
-          <div style="margin-top:10px">${badge(c.status,"choreo")}</div>
-          ${c.link?`<div id="media-${c.id}">${renderMediaBtns(c.id,c.link)}</div>`:""}
+          <div style="margin-top:8px">${badge(c.status,"choreo")}</div>
+          <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
+            ${c.link?`<div id="media-${c.id}">${renderMediaBtns(c.id, c.link, "▶ Ouvir Hino", "🎵")}</div>`:""}
+            ${c.linkGravacao?`<div id="media-grav-${c.id}">${renderMediaBtns("grav-"+c.id, c.linkGravacao, "🩰 Ver Gravação da Dança", "🩰")}</div>`:""}
+          </div>
         </div>
         <div class="card-footer">
           <div style="font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600">ALTERAR STATUS:</div>
@@ -433,13 +438,13 @@ function renderChoreo(){
   `;
 }
 
-function renderMediaBtns(id,url){
+function renderMediaBtns(id, url, label, icon){
   const lt=linkType(url);
-  const color=lt==="youtube"?"#FF0000":lt==="spotify"?"#1DB954":"#C9607E";
-  const label=lt==="youtube"?"▶ Assistir aqui":lt==="spotify"?"🎧 Ouvir aqui":"▶ Abrir";
-  const extLabel=lt==="youtube"?"↗ Abrir no YouTube":lt==="spotify"?"↗ Abrir no Spotify":"↗ Abrir link";
+  const btnLabel = label || (lt==="youtube"?"▶ Assistir aqui":lt==="spotify"?"🎧 Ouvir aqui":"▶ Abrir");
+  const extLabel = lt==="youtube"?"↗ YouTube":lt==="spotify"?"↗ Spotify":"↗ Abrir";
+  const color = lt==="youtube"?"#FF0000":lt==="spotify"?"#1DB954":"#C9607E";
   return `<div class="media-btns">
-    <button class="media-open" style="background:${color}" onclick="openPlayer('${id}','${encodeURIComponent(url)}')">${label}</button>
+    <button class="media-open" style="background:${color}" onclick="openPlayer('${id}','${encodeURIComponent(url)}')">${btnLabel}</button>
     <a class="media-link" href="${esc(url)}" target="_blank">${extLabel}</a>
   </div>`;
 }
@@ -462,6 +467,7 @@ window.openChoreoModal = function(id){
   document.getElementById("choreo-modal-title").textContent=c?"Editar Coreografia":"Nova Coreografia";
   document.getElementById("choreo-id").value=id||"";
   document.getElementById("choreo-link").value=c?.link||"";
+  document.getElementById("choreo-link-gravacao").value=c?.linkGravacao||"";
   document.getElementById("choreo-title").value=(c?.title&&c.title!==c?.link)?c.title:"";
   document.getElementById("choreo-event").value=c?.event||"";
   document.getElementById("choreo-status").value=c?.status||"planejado";
@@ -469,24 +475,24 @@ window.openChoreoModal = function(id){
   document.getElementById("choreo-link-hint").textContent="";
   openModal("modal-choreo");
 };
+window.saveChoreo = async function(){
+  const id=document.getElementById("choreo-id").value;
+  const link=document.getElementById("choreo-link").value.trim();
+  const linkGravacao=document.getElementById("choreo-link-gravacao").value.trim();
+  const title=document.getElementById("choreo-title").value.trim()||link;
+  if(!link&&!title){ alert("Cole o link ou informe um nome"); return; }
+  const data={link,linkGravacao,title,event:document.getElementById("choreo-event").value.trim(),status:document.getElementById("choreo-status").value,notes:document.getElementById("choreo-notes").value.trim(),createdAt:new Date().toISOString().slice(0,10)};
+  if(id) await set(ref(db,`choreographies/${id}`),data);
+  else   await push(ref(db,"choreographies"),data);
+  closeModal("modal-choreo");
+};
 window.onChoreoLinkChange = function(){
   const url=document.getElementById("choreo-link").value, lt=linkType(url), hint=document.getElementById("choreo-link-hint");
   if(!url){ hint.textContent=""; return; }
   if(lt==="youtube"){ hint.textContent="▶ Link do YouTube detectado"; hint.style.color="#cc0000"; }
   else if(lt==="spotify"){ hint.textContent="🎧 Link do Spotify detectado"; hint.style.color="#1DB954"; }
   else { hint.textContent="🔗 Link externo"; hint.style.color="var(--muted)"; }
-};
-window.saveChoreo = async function(){
-  const id=document.getElementById("choreo-id").value;
-  const link=document.getElementById("choreo-link").value.trim();
-  const title=document.getElementById("choreo-title").value.trim()||link;
-  if(!link&&!title){ alert("Cole o link ou informe um nome"); return; }
-  const data={link,title,event:document.getElementById("choreo-event").value.trim(),status:document.getElementById("choreo-status").value,notes:document.getElementById("choreo-notes").value.trim(),createdAt:new Date().toISOString().slice(0,10)};
-  if(id) await set(ref(db,`choreographies/${id}`),data);
-  else   await push(ref(db,"choreographies"),data);
-  closeModal("modal-choreo");
-};
-window.updateChoreoStatus = async function(id,status){ await update(ref(db,`choreographies/${id}`),{status}); };
+}; = async function(id,status){ await update(ref(db,`choreographies/${id}`),{status}); };
 window.deleteChoreo = async function(id){ if(confirm("Remover coreografia?")) await remove(ref(db,`choreographies/${id}`)); };
 
 // ── COSTUMES ──────────────────────────────────────────────────────────────────
@@ -703,7 +709,7 @@ render();
     </button>
     <button class="tab-btn" data-tab="choreo">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
-      Coreos
+      Coreografias
     </button>
     <button class="tab-btn" data-tab="costumes">
       <svg width="18" height="18" viewBox="0 0 32 32" fill="currentColor">
@@ -790,8 +796,11 @@ render();
     <div class="modal-body">
       <input type="hidden" id="choreo-id">
       <div class="field"><label>Link do hino (YouTube ou Spotify) *</label>
-        <input id="choreo-link" placeholder="Cole aqui o link" oninput="onChoreoLinkChange()">
+        <input id="choreo-link" placeholder="Cole aqui o link do hino" oninput="onChoreoLinkChange()">
         <div class="link-detected" id="choreo-link-hint"></div>
+      </div>
+      <div class="field"><label>🩰 Link da gravação da dança (opcional)</label>
+        <input id="choreo-link-gravacao" placeholder="Cole aqui o link do vídeo gravado da dança">
       </div>
       <div class="field"><label>Nome do hino (opcional)</label><input id="choreo-title" placeholder="Ex: Tua Graça Me Sustenta"></div>
       <div class="field"><label>Evento / culto</label><input id="choreo-event" placeholder="Ex: Culto de Domingo – 15/06"></div>
