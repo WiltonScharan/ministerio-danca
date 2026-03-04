@@ -57,12 +57,16 @@
   .field textarea{resize:vertical;min-height:72px}
   .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}
 
-  .member-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer}
+  .member-row{display:flex;align-items:flex-start;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer}
   .member-row:last-child{border-bottom:none}
   .member-row.present{background:#e8f5e9}
-  .check-circle{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px}
+  .check-circle{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;margin-top:2px}
   .check-circle.on{background:#2E7D32;color:#fff}
   .check-circle.off{background:#e0e0e0}
+
+  .obs-input{width:100%;margin-top:6px;padding:6px 10px;border-radius:6px;border:1.5px solid var(--border);font-size:12px;color:var(--text);background:#fff8fb;outline:none;font-family:inherit;resize:none}
+  .obs-input:focus{border-color:var(--p)}
+  .obs-saved{font-size:11px;color:#2E7D32;margin-top:3px;display:none}
 
   .session-chip{border-radius:12px;padding:9px 14px;cursor:pointer;border:2px solid var(--border);background:#fff;min-width:95px;text-align:center}
   .session-chip.active{background:var(--p);color:#fff;border-color:var(--p)}
@@ -89,6 +93,21 @@
   .empty{text-align:center;padding:40px;color:var(--muted)}
   .inactive-label{font-size:13px;font-weight:700;color:var(--muted);margin:18px 0 8px}
   .link-detected{font-size:12px;margin-top:4px;font-weight:600}
+
+  /* Filtro por bailarina */
+  .member-filter-box{background:#fff;border-radius:12px;border:1px solid var(--border);padding:14px 16px;margin-bottom:18px}
+  .member-filter-box h3{font-size:14px;font-weight:700;margin-bottom:10px;color:var(--d)}
+  .member-filter-box select{width:100%;padding:9px 12px;border-radius:8px;border:1.5px solid var(--border);font-size:14px;outline:none;background:var(--light);color:var(--text);cursor:pointer}
+  .history-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
+  .history-table th{background:var(--light);padding:7px 10px;text-align:left;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border)}
+  .history-table td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+  .history-table tr:last-child td{border-bottom:none}
+  .pill-present{background:#e8f5e9;color:#2E7D32;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700;display:inline-block}
+  .pill-absent{background:#fce4ec;color:#c62828;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700;display:inline-block}
+  .history-stats{display:flex;gap:12px;margin-top:10px;flex-wrap:wrap}
+  .history-stat{flex:1;min-width:80px;text-align:center;background:var(--light);border-radius:8px;padding:8px}
+  .history-stat .n{font-size:20px;font-weight:800;color:var(--p)}
+  .history-stat .l{font-size:11px;color:var(--muted);font-weight:600}
 
   /* ANIVERSÁRIOS */
   .bday-today{background:linear-gradient(135deg,#fff8e1,#fff3cd);border:2px solid #FFD600;border-radius:14px;padding:16px;margin-bottom:16px;text-align:center}
@@ -127,6 +146,7 @@ let state = { members:{}, attendance:{}, choreographies:{}, costumes:{} };
 let activeTab = "members";
 let selectedSession = null;
 let choreoFilter = "all";
+let attMemberFilter = "";   // ← filtro por bailarina na aba presença
 
 ["members","attendance","choreographies","costumes"].forEach(k => {
   onValue(ref(db, k), snap => { state[k] = snap.val() || {}; render(); });
@@ -205,10 +225,10 @@ function render(){
   document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
   document.getElementById(`panel-${activeTab}`)?.classList.add("active");
   renderSummary();
-  if(activeTab==="members")         renderMembers();
-  else if(activeTab==="attendance") renderAttendance();
-  else if(activeTab==="choreo")     renderChoreo();
-  else if(activeTab==="costumes")   renderCostumes();
+  if(activeTab==="members")           renderMembers();
+  else if(activeTab==="attendance")   renderAttendance();
+  else if(activeTab==="choreo")       renderChoreo();
+  else if(activeTab==="costumes")     renderCostumes();
   else if(activeTab==="aniversarios") renderAniversarios();
 }
 
@@ -222,9 +242,7 @@ function renderSummary(){
 // ── MEMBERS ───────────────────────────────────────────────────────────────────
 function wppLink(num, label, name, isMae){
   const clean = num.replace(/\D/g,"");
-  const msg = isMae
-    ? encodeURIComponent(`🎂 Feliz aniversário para ${name}! Que Deus a abençoe! 🎉`)
-    : "";
+  const msg = isMae ? encodeURIComponent(`🎂 Feliz aniversário para ${name}! Que Deus a abençoe! 🎉`) : "";
   const wppIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.116 1.524 5.847L0 24l6.344-1.498A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.651-.502-5.176-1.381l-.371-.22-3.768.89.937-3.658-.242-.381A9.944 9.944 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>`;
   return `<a class="wpp-btn" href="https://wa.me/55${clean}" target="_blank">${wppIcon} ${label}</a>`;
 }
@@ -312,11 +330,25 @@ function renderAttendance(){
   const cur = sessions.find(s=>s.id===selectedSession);
   const am = activeMembers();
   const el = document.getElementById("panel-attendance");
+
+  // ── bloco filtro por bailarina ──
+  const filterBlock = `
+    <div class="member-filter-box">
+      <h3>🔍 Histórico por bailarina</h3>
+      <select onchange="setAttMemberFilter(this.value)">
+        <option value="">Selecione uma bailarina...</option>
+        ${am.map(m=>`<option value="${m.id}" ${attMemberFilter===m.id?"selected":""}>${esc(m.name)}</option>`).join("")}
+      </select>
+      ${attMemberFilter ? renderMemberHistory(attMemberFilter, sessions) : ""}
+    </div>`;
+
+  // ── lista de ensaios ──
   el.innerHTML = `
     <div class="sec-title">
       <div><h2>📋 Lista de Presença</h2><p>${sessions.length} ensaio(s)</p></div>
       <button class="btn btn-primary btn-sm" onclick="openAttModal()">+ Novo Ensaio</button>
     </div>
+    ${filterBlock}
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
       ${sessions.map(s=>{
         const cnt=s.records?Object.values(s.records).filter(r=>r.present).length:0;
@@ -325,7 +357,7 @@ function renderAttendance(){
           <h4>${fmtDate(s.date)}</h4><p>${cnt}/${tot} presentes</p></div>`;
       }).join("")}
     </div>
-    ${cur?`
+    ${cur ? `
     <div style="background:#fff;border-radius:14px;border:1px solid var(--border);overflow:hidden">
       <div style="background:var(--p);color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center">
         <div><b>Ensaio – ${fmtDate(cur.date)}</b>${cur.notes?`<div style="font-size:12px;opacity:.85">${esc(cur.notes)}</div>`:""}</div>
@@ -334,21 +366,75 @@ function renderAttendance(){
           <button class="btn-icon" onclick="deleteSession('${cur.id}')">🗑️</button>
         </div>
       </div>
-      ${am.length===0?`<div style="padding:20px;text-align:center;color:var(--muted)">Cadastre membros primeiro</div>`
-      :am.map(m=>{
-        const rec=cur.records?Object.values(cur.records).find(r=>r.memberId===m.id):null;
-        const present=rec?.present||false;
-        return `<div class="member-row${present?" present":""}" onclick="toggleAttendance('${cur.id}','${m.id}')">
-          <div class="avatar" style="width:34px;height:34px;font-size:13px;background:${avatarColor(m.name)}">${initials(m.name)}</div>
-          <div style="flex:1"><div style="font-weight:600;font-size:14px">${esc(m.name)}</div>
-            <div style="font-size:12px;color:var(--muted)">${ROLE_LABEL[m.role]||"🩰 Bailarina"}</div></div>
-          <div class="check-circle ${present?"on":"off"}">${present?"✓":""}</div>
-        </div>`;
-      }).join("")}
-    </div>`:""}
+      ${am.length===0
+        ? `<div style="padding:20px;text-align:center;color:var(--muted)">Cadastre membros primeiro</div>`
+        : am.map(m=>{
+            const rec = cur.records ? Object.values(cur.records).find(r=>r.memberId===m.id) : null;
+            const present = rec?.present||false;
+            const obs = rec?.obs||"";
+            return `<div class="member-row${present?" present":""}" id="mrow-${cur.id}-${m.id}">
+              <div style="display:flex;align-items:center;gap:12px;flex:1;cursor:pointer" onclick="toggleAttendance('${cur.id}','${m.id}')">
+                <div class="avatar" style="width:34px;height:34px;font-size:13px;background:${avatarColor(m.name)};flex-shrink:0">${initials(m.name)}</div>
+                <div style="flex:1">
+                  <div style="font-weight:600;font-size:14px">${esc(m.name)}</div>
+                  <div style="font-size:12px;color:var(--muted)">${ROLE_LABEL[m.role]||"🩰 Bailarina"}</div>
+                  ${!present ? `
+                    <textarea class="obs-input" rows="1"
+                      placeholder="Motivo da falta (opcional)..."
+                      onclick="event.stopPropagation()"
+                      onblur="saveObs('${cur.id}','${m.id}',this.value)"
+                    >${esc(obs)}</textarea>` : ""}
+                  ${!present && obs ? `<div style="font-size:11px;color:#c62828;margin-top:2px">📝 ${esc(obs)}</div>` : ""}
+                </div>
+              </div>
+              <div class="check-circle ${present?"on":"off"}" onclick="toggleAttendance('${cur.id}','${m.id}')" style="cursor:pointer">${present?"✓":""}</div>
+            </div>`;
+          }).join("")
+      }
+    </div>` : ""}
     ${sessions.length===0?`<div class="empty"><div style="font-size:48px;margin-bottom:8px">📋</div><p>Nenhum ensaio registrado</p></div>`:""}
   `;
 }
+
+// ── histórico de uma bailarina por ensaio ──
+function renderMemberHistory(memberId, sessions){
+  const m = getMember(memberId);
+  if(!m) return "";
+  let presentes=0, faltas=0;
+  const rows = sessions.map(s=>{
+    const rec = s.records ? Object.values(s.records).find(r=>r.memberId===memberId) : null;
+    const present = rec?.present||false;
+    const obs = rec?.obs||"";
+    if(present) presentes++; else faltas++;
+    return `<tr>
+      <td style="font-weight:600">${fmtDate(s.date)}</td>
+      <td>${s.notes?`<span style="font-size:12px;color:var(--muted)">${esc(s.notes)}</span>`:"-"}</td>
+      <td>${present
+        ? `<span class="pill-present">✓ Presente</span>`
+        : `<span class="pill-absent">✗ Faltou</span>`}</td>
+      <td style="font-size:12px;color:var(--muted)">${obs?esc(obs):"-"}</td>
+    </tr>`;
+  }).join("");
+
+  const pct = sessions.length ? Math.round(presentes/sessions.length*100) : 0;
+
+  return `
+    <div class="history-stats">
+      <div class="history-stat"><div class="n" style="color:#2E7D32">${presentes}</div><div class="l">Presenças</div></div>
+      <div class="history-stat"><div class="n" style="color:#c62828">${faltas}</div><div class="l">Faltas</div></div>
+      <div class="history-stat"><div class="n">${pct}%</div><div class="l">Frequência</div></div>
+    </div>
+    ${sessions.length>0 ? `
+    <div style="overflow-x:auto;margin-top:4px">
+      <table class="history-table">
+        <thead><tr><th>Data</th><th>Ensaio</th><th>Status</th><th>Observação</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>` : `<div style="text-align:center;padding:12px;font-size:13px;color:var(--muted)">Nenhum ensaio registrado ainda</div>`}
+  `;
+}
+
+window.setAttMemberFilter = function(val){ attMemberFilter=val; renderAttendance(); };
 
 window.openAttModal = function(){ document.getElementById("att-date").value=""; document.getElementById("att-notes").value=""; openModal("modal-att"); };
 window.saveSession = async function(){
@@ -356,7 +442,7 @@ window.saveSession = async function(){
   if(!date){ alert("Selecione a data"); return; }
   const notes=document.getElementById("att-notes").value.trim();
   const am=activeMembers(); const records={};
-  am.forEach(m=>{ const k=push(ref(db,"_tmp")).key; records[k]={memberId:m.id,present:false}; });
+  am.forEach(m=>{ const k=push(ref(db,"_tmp")).key; records[k]={memberId:m.id,present:false,obs:""}; });
   const newRef=push(ref(db,"attendance"));
   await set(newRef,{date,notes,records});
   selectedSession=newRef.key; closeModal("modal-att");
@@ -367,7 +453,14 @@ window.toggleAttendance = async function(sessionId,memberId){
   const records=session.records||{};
   const key=Object.keys(records).find(k=>records[k].memberId===memberId);
   if(key) await update(ref(db,`attendance/${sessionId}/records/${key}`),{present:!records[key].present});
-  else { const k=push(ref(db,"_tmp")).key; await set(ref(db,`attendance/${sessionId}/records/${k}`),{memberId,present:true}); }
+  else { const k=push(ref(db,"_tmp")).key; await set(ref(db,`attendance/${sessionId}/records/${k}`),{memberId,present:true,obs:""}); }
+};
+window.saveObs = async function(sessionId, memberId, obs){
+  const session=state.attendance[sessionId]; if(!session) return;
+  const records=session.records||{};
+  const key=Object.keys(records).find(k=>records[k].memberId===memberId);
+  if(key) await update(ref(db,`attendance/${sessionId}/records/${key}`),{obs});
+  else { const k=push(ref(db,"_tmp")).key; await set(ref(db,`attendance/${sessionId}/records/${k}`),{memberId,present:false,obs}); }
 };
 window.deleteSession = async function(id){
   if(confirm("Remover este ensaio?")){ await remove(ref(db,`attendance/${id}`)); if(selectedSession===id) selectedSession=null; }
