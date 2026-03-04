@@ -66,7 +66,6 @@
 
   .obs-input{width:100%;margin-top:6px;padding:6px 10px;border-radius:6px;border:1.5px solid var(--border);font-size:12px;color:var(--text);background:#fff8fb;outline:none;font-family:inherit;resize:none}
   .obs-input:focus{border-color:var(--p)}
-  .obs-saved{font-size:11px;color:#2E7D32;margin-top:3px;display:none}
 
   .session-chip{border-radius:12px;padding:9px 14px;cursor:pointer;border:2px solid var(--border);background:#fff;min-width:95px;text-align:center}
   .session-chip.active{background:var(--p);color:#fff;border-color:var(--p)}
@@ -94,7 +93,7 @@
   .inactive-label{font-size:13px;font-weight:700;color:var(--muted);margin:18px 0 8px}
   .link-detected{font-size:12px;margin-top:4px;font-weight:600}
 
-  /* Filtro por bailarina */
+  /* Histórico bailarina */
   .member-filter-box{background:#fff;border-radius:12px;border:1px solid var(--border);padding:14px 16px;margin-bottom:18px}
   .member-filter-box h3{font-size:14px;font-weight:700;margin-bottom:10px;color:var(--d)}
   .member-filter-box select{width:100%;padding:9px 12px;border-radius:8px;border:1.5px solid var(--border);font-size:14px;outline:none;background:var(--light);color:var(--text);cursor:pointer}
@@ -108,6 +107,25 @@
   .history-stat{flex:1;min-width:80px;text-align:center;background:var(--light);border-radius:8px;padding:8px}
   .history-stat .n{font-size:20px;font-weight:800;color:var(--p)}
   .history-stat .l{font-size:11px;color:var(--muted);font-weight:600}
+
+  /* ── FIGURINOS (novo) ── */
+  .costume-style-card{background:#fff;border-radius:14px;border:1px solid var(--border);margin-bottom:14px;overflow:hidden}
+  .costume-style-header{background:linear-gradient(135deg,var(--d),var(--p));color:#fff;padding:13px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:10px}
+  .costume-style-header .title{font-weight:700;font-size:15px}
+  .costume-style-header .subtitle{font-size:12px;opacity:.85;margin-top:2px}
+  .costume-style-header .chevron{font-size:16px;transition:transform .2s}
+  .costume-style-header.open .chevron{transform:rotate(180deg)}
+  .costume-member-list{display:none}
+  .costume-member-list.open{display:block}
+  .costume-member-row{display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid var(--border)}
+  .costume-member-row:last-child{border-bottom:none}
+  .costume-status-badge{display:inline-flex;align-items:center;gap:4px;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:700}
+  .costume-summary-bar{display:flex;gap:0;border-bottom:1px solid var(--border)}
+  .costume-sum-item{flex:1;text-align:center;padding:8px 4px;border-right:1px solid var(--border)}
+  .costume-sum-item:last-child{border-right:none}
+  .costume-sum-item .n{font-size:16px;font-weight:800}
+  .costume-sum-item .l{font-size:10px;color:var(--muted);font-weight:600}
+  .loan-info{font-size:11px;color:var(--muted);margin-top:2px}
 
   /* ANIVERSÁRIOS */
   .bday-today{background:linear-gradient(135deg,#fff8e1,#fff3cd);border:2px solid #FFD600;border-radius:14px;padding:16px;margin-bottom:16px;text-align:center}
@@ -146,7 +164,8 @@ let state = { members:{}, attendance:{}, choreographies:{}, costumes:{} };
 let activeTab = "members";
 let selectedSession = null;
 let choreoFilter = "all";
-let attMemberFilter = "";   // ← filtro por bailarina na aba presença
+let attMemberFilter = "";
+let openedCostume = null; // estilo de roupa expandido
 
 ["members","attendance","choreographies","costumes"].forEach(k => {
   onValue(ref(db, k), snap => { state[k] = snap.val() || {}; render(); });
@@ -191,12 +210,6 @@ function tutuSVG(size=24, color="#C9607E"){
 const ROLE_LABEL = { lider:"👑 Líder", co_lider:"🌟 Co-líder", auxiliar:"🤝 Auxiliar" };
 const MONTHS_PT = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
-const COSTUME_STATUS = {
-  na_igreja: { label:"Na Igreja", color:"#2E7D32", icon:"🏛️" },
-  em_casa:   { label:"Levou p/ Casa", color:"#E65100", icon:"🏠" },
-  devolvida: { label:"Devolvida", color:"#1565C0", icon:"✅" },
-  emprestada:{ label:"Emprestada", color:"#6A1B9A", icon:"🔄" },
-};
 const CHOREO_STATUS = {
   planejado:   { label:"Planejado", color:"#8B6080", icon:"📋" },
   em_ensaio:   { label:"Em Ensaio", color:"#E65100", icon:"🎵" },
@@ -204,10 +217,26 @@ const CHOREO_STATUS = {
   apresentado: { label:"Apresentado", color:"#1565C0", icon:"🌟" },
 };
 
-function badge(status, type){
-  const map = type==="costume" ? COSTUME_STATUS : CHOREO_STATUS;
-  const s = map[status] || map[Object.keys(map)[0]];
+// ── status de figurino por bailarina ──
+const ASSIGN_STATUS = {
+  na_igreja:  { label:"Na Igreja",       color:"#2E7D32", icon:"🏛️" },
+  em_casa:    { label:"Levou p/ Casa",   color:"#E65100", icon:"🏠" },
+  emprestado: { label:"Emprestado",      color:"#6A1B9A", icon:"🔄" },
+  recebido:   { label:"Recebido",        color:"#1565C0", icon:"📦" },
+};
+
+function chorBadge(status){
+  const s = CHOREO_STATUS[status] || CHOREO_STATUS.planejado;
   return `<span class="badge" style="background:${s.color}22;color:${s.color};border:1px solid ${s.color}55">${s.icon} ${s.label}</span>`;
+}
+function assignBadge(status){
+  const s = ASSIGN_STATUS[status] || ASSIGN_STATUS.na_igreja;
+  return `<span class="costume-status-badge" style="background:${s.color}18;color:${s.color};border:1px solid ${s.color}44">${s.icon} ${s.label}</span>`;
+}
+
+// retorna o assignment de um membro num figurino (ou default)
+function getAssign(costumeId, memberId){
+  return state.costumes[costumeId]?.assignments?.[memberId] || { status:"na_igreja" };
 }
 
 window.maskPhone = function(el){
@@ -331,7 +360,6 @@ function renderAttendance(){
   const am = activeMembers();
   const el = document.getElementById("panel-attendance");
 
-  // ── bloco filtro por bailarina ──
   const filterBlock = `
     <div class="member-filter-box">
       <h3>🔍 Histórico por bailarina</h3>
@@ -342,7 +370,6 @@ function renderAttendance(){
       ${attMemberFilter ? renderMemberHistory(attMemberFilter, sessions) : ""}
     </div>`;
 
-  // ── lista de ensaios ──
   el.innerHTML = `
     <div class="sec-title">
       <div><h2>📋 Lista de Presença</h2><p>${sessions.length} ensaio(s)</p></div>
@@ -396,12 +423,10 @@ function renderAttendance(){
   `;
 }
 
-// ── histórico de uma bailarina por ensaio ──
 function renderMemberHistory(memberId, sessions){
-  const m = getMember(memberId);
-  if(!m) return "";
+  const m = getMember(memberId); if(!m) return "";
   let presentes=0, faltas=0;
-  const rows = sessions.map(s=>{
+  const rows = [...sessions].reverse().map(s=>{
     const rec = s.records ? Object.values(s.records).find(r=>r.memberId===memberId) : null;
     const present = rec?.present||false;
     const obs = rec?.obs||"";
@@ -409,33 +434,25 @@ function renderMemberHistory(memberId, sessions){
     return `<tr>
       <td style="font-weight:600">${fmtDate(s.date)}</td>
       <td>${s.notes?`<span style="font-size:12px;color:var(--muted)">${esc(s.notes)}</span>`:"-"}</td>
-      <td>${present
-        ? `<span class="pill-present">✓ Presente</span>`
-        : `<span class="pill-absent">✗ Faltou</span>`}</td>
+      <td>${present?`<span class="pill-present">✓ Presente</span>`:`<span class="pill-absent">✗ Faltou</span>`}</td>
       <td style="font-size:12px;color:var(--muted)">${obs?esc(obs):"-"}</td>
     </tr>`;
   }).join("");
-
   const pct = sessions.length ? Math.round(presentes/sessions.length*100) : 0;
-
   return `
     <div class="history-stats">
       <div class="history-stat"><div class="n" style="color:#2E7D32">${presentes}</div><div class="l">Presenças</div></div>
       <div class="history-stat"><div class="n" style="color:#c62828">${faltas}</div><div class="l">Faltas</div></div>
       <div class="history-stat"><div class="n">${pct}%</div><div class="l">Frequência</div></div>
     </div>
-    ${sessions.length>0 ? `
-    <div style="overflow-x:auto;margin-top:4px">
+    ${sessions.length>0?`<div style="overflow-x:auto;margin-top:4px">
       <table class="history-table">
         <thead><tr><th>Data</th><th>Ensaio</th><th>Status</th><th>Observação</th></tr></thead>
         <tbody>${rows}</tbody>
-      </table>
-    </div>` : `<div style="text-align:center;padding:12px;font-size:13px;color:var(--muted)">Nenhum ensaio registrado ainda</div>`}
-  `;
+      </table></div>`:`<div style="text-align:center;padding:12px;font-size:13px;color:var(--muted)">Nenhum ensaio ainda</div>`}`;
 }
 
 window.setAttMemberFilter = function(val){ attMemberFilter=val; renderAttendance(); };
-
 window.openAttModal = function(){ document.getElementById("att-date").value=""; document.getElementById("att-notes").value=""; openModal("modal-att"); };
 window.saveSession = async function(){
   const date=document.getElementById("att-date").value;
@@ -470,14 +487,13 @@ window.deleteSession = async function(id){
 function renderMediaBtns(id, url, btnLabel, extLabel){
   const lt=linkType(url);
   const color=lt==="youtube"?"#FF0000":lt==="spotify"?"#1DB954":"#C9607E";
-  const lbl = btnLabel || (lt==="youtube"?"▶ Assistir aqui":lt==="spotify"?"🎧 Ouvir aqui":"▶ Abrir");
-  const ext = extLabel || (lt==="youtube"?"↗ Abrir no YouTube":lt==="spotify"?"↗ Abrir no Spotify":"↗ Abrir link");
+  const lbl = btnLabel||(lt==="youtube"?"▶ Assistir aqui":lt==="spotify"?"🎧 Ouvir aqui":"▶ Abrir");
+  const ext = extLabel||(lt==="youtube"?"↗ Abrir no YouTube":lt==="spotify"?"↗ Abrir no Spotify":"↗ Abrir link");
   return `<div class="media-btns">
     <button class="media-open" style="background:${color}" onclick="openPlayer('${id}','${encodeURIComponent(url)}')">${lbl}</button>
     <a class="media-link" href="${esc(url)}" target="_blank">${ext}</a>
   </div>`;
 }
-
 window.openPlayer = function(id, encodedUrl){
   const url=decodeURIComponent(encodedUrl), lt=linkType(url), yt=ytId(url), sp=spotifyEmbed(url);
   const label=lt==="youtube"?"▶ YouTube":"🎧 Spotify";
@@ -500,12 +516,9 @@ window.openPlayer = function(id, encodedUrl){
 };
 window.closePlayer = function(id, encodedUrl){
   const url=decodeURIComponent(encodedUrl);
-  const isGrav = id.startsWith("grav-");
-  if(isGrav){
-    document.getElementById(`media-${id}`).innerHTML=renderMediaBtns(id, url, "🩰 Ver Gravação da Dança", "↗ Abrir");
-  } else {
-    document.getElementById(`media-${id}`).innerHTML=renderMediaBtns(id, url);
-  }
+  const isGrav=id.startsWith("grav-");
+  document.getElementById(`media-${id}`).innerHTML=renderMediaBtns(id, url,
+    isGrav?"🩰 Ver Gravação da Dança":undefined, isGrav?"↗ Abrir":undefined);
 };
 
 function renderChoreo(){
@@ -542,10 +555,10 @@ function renderChoreo(){
               <button class="btn btn-danger btn-sm" onclick="deleteChoreo('${c.id}')">🗑️</button>
             </div>
           </div>
-          <div style="margin-top:10px">${badge(c.status,"choreo")}</div>
+          <div style="margin-top:10px">${chorBadge(c.status)}</div>
           <div style="display:flex;flex-direction:column;gap:4px">
-            ${c.link?`<div id="media-${c.id}">${renderMediaBtns(c.id, c.link, "▶ Ouvir Hino", "↗ Abrir no YouTube")}</div>`:""}
-            ${c.linkGravacao?`<div id="media-grav-${c.id}">${renderMediaBtns("grav-"+c.id, c.linkGravacao, "🩰 Ver Gravação da Dança", "↗ Abrir")}</div>`:""}
+            ${c.link?`<div id="media-${c.id}">${renderMediaBtns(c.id, c.link,"▶ Ouvir Hino","↗ Abrir no YouTube")}</div>`:""}
+            ${c.linkGravacao?`<div id="media-grav-${c.id}">${renderMediaBtns("grav-"+c.id, c.linkGravacao,"🩰 Ver Gravação da Dança","↗ Abrir")}</div>`:""}
           </div>
         </div>
         <div class="card-footer">
@@ -558,12 +571,9 @@ function renderChoreo(){
         </div>
       </div>`;
     }).join("")}
-    ${list.length===0?`<div class="empty"><div style="font-size:48px;margin-bottom:8px">🎵</div><p>Nenhuma coreografia encontrada</p></div>`:""}
-  `;
+    ${list.length===0?`<div class="empty"><div style="font-size:48px;margin-bottom:8px">🎵</div><p>Nenhuma coreografia encontrada</p></div>`:""}`;
 }
-
 window.setChoreoFilter = function(f){ choreoFilter=f; renderChoreo(); };
-
 window.openChoreoModal = function(id){
   const c=id?state.choreographies[id]:null;
   document.getElementById("choreo-modal-title").textContent=c?"Editar Coreografia":"Nova Coreografia";
@@ -577,7 +587,6 @@ window.openChoreoModal = function(id){
   document.getElementById("choreo-link-hint").textContent="";
   openModal("modal-choreo");
 };
-
 window.onChoreoLinkChange = function(){
   const url=document.getElementById("choreo-link").value, lt=linkType(url);
   const hint=document.getElementById("choreo-link-hint");
@@ -586,7 +595,6 @@ window.onChoreoLinkChange = function(){
   else if(lt==="spotify"){ hint.textContent="🎧 Link do Spotify detectado"; hint.style.color="#1DB954"; }
   else { hint.textContent="🔗 Link externo"; hint.style.color="var(--muted)"; }
 };
-
 window.saveChoreo = async function(){
   const id=document.getElementById("choreo-id").value;
   const link=document.getElementById("choreo-link").value.trim();
@@ -605,135 +613,242 @@ window.saveChoreo = async function(){
 window.updateChoreoStatus = async function(id,status){ await update(ref(db,`choreographies/${id}`),{status}); };
 window.deleteChoreo = async function(id){ if(confirm("Remover coreografia?")) await remove(ref(db,`choreographies/${id}`)); };
 
-// ── COSTUMES ──────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+// ── FIGURINOS (novo modelo) ───────────────────────────────
+// Estrutura Firebase:
+//   costumes/{costumeId}/name, description
+//   costumes/{costumeId}/assignments/{memberId}:
+//     { status, loanToId?, loanFromId?, date, notes }
+// ══════════════════════════════════════════════════════════
+
 function renderCostumes(){
-  const all=Object.entries(state.costumes).map(([id,c])=>({id,...c}));
-  const el=document.getElementById("panel-costumes");
-  el.innerHTML=`
+  const styles = Object.entries(state.costumes).map(([id,c])=>({id,...c}));
+  const am = activeMembers();
+  const el = document.getElementById("panel-costumes");
+
+  // contagem global de alertas
+  let totalFora = 0;
+  styles.forEach(c => {
+    am.forEach(m => {
+      const a = getAssign(c.id, m.id);
+      if(a.status==="em_casa"||a.status==="emprestado") totalFora++;
+    });
+  });
+
+  if(styles.length===0){
+    el.innerHTML=`
+      <div class="sec-title">
+        <div><h2 style="display:flex;align-items:center;gap:8px">${tutuSVG(22)} Figurinos</h2><p>Nenhum estilo cadastrado</p></div>
+        <button class="btn btn-primary btn-sm" onclick="openCostumeModal()">+ Novo Estilo</button>
+      </div>
+      <div class="empty">${tutuSVG(52)}<p style="margin-top:8px">Cadastre os estilos de roupa do ministério</p></div>`;
+    return;
+  }
+
+  el.innerHTML = `
     <div class="sec-title">
-      <div><h2 style="display:flex;align-items:center;gap:8px">${tutuSVG(24)} Figurinos</h2><p>${all.length} figurino(s)</p></div>
-      <button class="btn btn-primary btn-sm" onclick="openCostumeModal()">+ Novo Figurino</button>
+      <div><h2 style="display:flex;align-items:center;gap:8px">${tutuSVG(22)} Figurinos</h2>
+        <p>${styles.length} estilo(s) · ${am.length} bailarina(s)${totalFora>0?` · <span style="color:#E65100;font-weight:700">⚠️ ${totalFora} fora da igreja</span>`:""}</p></div>
+      <button class="btn btn-primary btn-sm" onclick="openCostumeModal()">+ Novo Estilo</button>
     </div>
-    ${all.map(c=>{
-      const items=c.items?Object.entries(c.items).map(([kid,i])=>({kid,...i})):[];
-      const emCasa=items.filter(i=>i.status==="em_casa"), emp=items.filter(i=>i.status==="emprestada");
-      return `<div style="background:#fff;border-radius:14px;border:1px solid var(--border);margin-bottom:16px;overflow:hidden">
-        <div class="card-header">
-          <div style="display:flex;align-items:center;gap:10px">${tutuSVG(30,"#fff")}
-            <div><div style="font-weight:700;font-size:16px">${esc(c.name)}</div>
-              ${c.description?`<div style="font-size:12px;opacity:.85">${esc(c.description)}</div>`:""}</div></div>
-          <div style="display:flex;gap:6px">
-            <button class="btn-icon" onclick="openRecordModal('${c.id}')">+ Registrar</button>
-            <button class="btn-icon" onclick="openCostumeModal('${c.id}')">✏️</button>
-            <button style="background:#ff000033;border:none;color:#fff;border-radius:8px;padding:5px 10px;cursor:pointer" onclick="deleteCostume('${c.id}')">🗑️</button>
-          </div>
-        </div>
-        ${(emCasa.length||emp.length)?`<div class="warn-bar">⚠️ ${emCasa.length?`${emCasa.length} fora da igreja`:""}${emCasa.length&&emp.length?" · ":""}${emp.length?`${emp.length} emprestado(s)`:""}</div>`:""}
-        ${items.length===0?`<div style="padding:14px;text-align:center;color:var(--muted);font-size:13px">Nenhum registro · clique em "+ Registrar"</div>`
-        :items.map(item=>{
-          const m=getMember(item.memberId); if(!m) return "";
-          return `<div class="card-body" style="display:flex;align-items:center;gap:12px">
-            <div class="avatar" style="width:32px;height:32px;font-size:12px;background:${avatarColor(m.name)}">${initials(m.name)}</div>
-            <div style="flex:1"><div style="font-weight:600;font-size:14px">${esc(m.name)}</div>
-              ${item.notes?`<div style="font-size:12px;color:var(--muted)">${esc(item.notes)}</div>`:""}
-              ${item.date?`<div style="font-size:11px;color:var(--muted)">Atualizado: ${item.date.split("-").reverse().join("/")}</div>`:""}</div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-              ${badge(item.status,"costume")}
-              <button onclick="removeCostumeItem('${c.id}','${item.kid}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px">remover</button>
-            </div>
-          </div>`;
-        }).join("")}
-      </div>`;
-    }).join("")}
-    ${all.length===0?`<div class="empty">${tutuSVG(52)}<p style="margin-top:8px">Nenhum figurino cadastrado</p></div>`:""}
-  `;
+    ${styles.map(c => costumeStyleCard(c, am)).join("")}`;
 }
+
+function costumeStyleCard(c, am){
+  const assigns = am.map(m => ({ m, a: getAssign(c.id, m.id) }));
+  const naIgreja   = assigns.filter(x => x.a.status==="na_igreja").length;
+  const emCasa     = assigns.filter(x => x.a.status==="em_casa").length;
+  const emprestado = assigns.filter(x => x.a.status==="emprestado").length;
+  const recebido   = assigns.filter(x => x.a.status==="recebido").length;
+  const isOpen = openedCostume === c.id;
+
+  return `<div class="costume-style-card">
+    <div class="costume-style-header${isOpen?" open":""}" onclick="toggleCostume('${c.id}')">
+      <div style="display:flex;align-items:center;gap:10px;flex:1">
+        ${tutuSVG(28,"#fff")}
+        <div>
+          <div class="title">${esc(c.name)}</div>
+          ${c.description?`<div class="subtitle">${esc(c.description)}</div>`:""}
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="btn-icon" onclick="event.stopPropagation();openCostumeModal('${c.id}')">✏️</button>
+        <button style="background:#ff000033;border:none;color:#fff;border-radius:8px;padding:5px 10px;cursor:pointer" onclick="event.stopPropagation();deleteCostume('${c.id}')">🗑️</button>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <!-- resumo -->
+    <div class="costume-summary-bar">
+      <div class="costume-sum-item"><div class="n" style="color:#2E7D32">${naIgreja}</div><div class="l">🏛️ Na Igreja</div></div>
+      <div class="costume-sum-item"><div class="n" style="color:#E65100">${emCasa}</div><div class="l">🏠 Em Casa</div></div>
+      <div class="costume-sum-item"><div class="n" style="color:#6A1B9A">${emprestado}</div><div class="l">🔄 Emprestado</div></div>
+      <div class="costume-sum-item"><div class="n" style="color:#1565C0">${recebido}</div><div class="l">📦 Recebido</div></div>
+    </div>
+    <!-- lista de bailarinas -->
+    <div class="costume-member-list${isOpen?" open":""}">
+      ${am.length===0
+        ? `<div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">Cadastre membros primeiro</div>`
+        : assigns.map(({m, a}) => {
+            const loanToName   = a.loanToId   ? getMember(a.loanToId)?.name   : null;
+            const loanFromName = a.loanFromId ? getMember(a.loanFromId)?.name : null;
+            return `<div class="costume-member-row">
+              <div class="avatar" style="width:36px;height:36px;font-size:13px;background:${avatarColor(m.name)};flex-shrink:0">${initials(m.name)}</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:600;font-size:14px">${esc(m.name)}</div>
+                <div style="margin-top:3px">${assignBadge(a.status)}</div>
+                ${a.status==="emprestado"&&loanToName
+                  ? `<div class="loan-info">🔄 Emprestado para <b>${esc(loanToName)}</b>${a.date?` em ${fmtDate(a.date)}`:""}</div>` : ""}
+                ${a.status==="recebido"&&loanFromName
+                  ? `<div class="loan-info">📦 Recebido de <b>${esc(loanFromName)}</b>${a.date?` em ${fmtDate(a.date)}`:""}</div>` : ""}
+                ${a.notes?`<div class="loan-info">📝 ${esc(a.notes)}</div>`:""}
+              </div>
+              <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;flex-shrink:0">
+                ${a.status==="na_igreja" ? `
+                  <button class="btn btn-ghost btn-sm" onclick="openStatusModal('${c.id}','${m.id}')">✏️ Registrar</button>` : ""}
+                ${a.status==="em_casa" ? `
+                  <button class="btn btn-ghost btn-sm" onclick="openStatusModal('${c.id}','${m.id}')">✏️ Alterar</button>
+                  <button class="btn btn-primary btn-sm" onclick="returnToChurch('${c.id}','${m.id}')">🏛️ Devolveu</button>` : ""}
+                ${a.status==="emprestado" ? `
+                  <button class="btn btn-primary btn-sm" onclick="returnLoan('${c.id}','${m.id}')">↩️ Devolvida</button>` : ""}
+                ${a.status==="recebido" ? `
+                  <button class="btn btn-primary btn-sm" onclick="returnLoan('${c.id}','${a.loanFromId}')">↩️ Devolver</button>` : ""}
+              </div>
+            </div>`;
+          }).join("")
+      }
+    </div>
+  </div>`;
+}
+
+window.toggleCostume = function(id){ openedCostume = openedCostume===id ? null : id; renderCostumes(); };
+
+// ── modal: novo/editar estilo ──
 window.openCostumeModal = function(id){
-  const c=id?state.costumes[id]:null;
-  document.getElementById("costume-modal-title").textContent=c?"Editar Figurino":"Novo Figurino";
-  document.getElementById("costume-id").value=id||"";
-  document.getElementById("costume-name").value=c?.name||"";
-  document.getElementById("costume-desc").value=c?.description||"";
+  const c = id ? state.costumes[id] : null;
+  document.getElementById("costume-modal-title").textContent = c?"Editar Estilo":"Novo Estilo de Roupa";
+  document.getElementById("costume-id").value = id||"";
+  document.getElementById("costume-name").value = c?.name||"";
+  document.getElementById("costume-desc").value = c?.description||"";
   openModal("modal-costume");
 };
 window.saveCostume = async function(){
-  const id=document.getElementById("costume-id").value;
-  const name=document.getElementById("costume-name").value.trim();
+  const id   = document.getElementById("costume-id").value;
+  const name = document.getElementById("costume-name").value.trim();
   if(!name){ alert("Nome obrigatório"); return; }
-  const data={name,description:document.getElementById("costume-desc").value.trim(),items:{}};
-  if(id){ await update(ref(db,`costumes/${id}`),{name:data.name,description:data.description}); }
-  else   { await push(ref(db,"costumes"),data); }
+  const desc = document.getElementById("costume-desc").value.trim();
+  if(id) await update(ref(db,`costumes/${id}`),{name,description:desc});
+  else   await push(ref(db,"costumes"),{name,description:desc,assignments:{}});
   closeModal("modal-costume");
 };
-window.deleteCostume = async function(id){ if(confirm("Remover figurino?")) await remove(ref(db,`costumes/${id}`)); };
-window.openRecordModal = function(costumeId){
-  const am=activeMembers();
-  document.getElementById("record-costume-id").value=costumeId;
-  const sel=document.getElementById("record-member");
-  sel.innerHTML=`<option value="">Selecione...</option>${am.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join("")}`;
-  document.getElementById("record-status").value="na_igreja";
-  document.getElementById("record-notes").value="";
-  openModal("modal-record");
+window.deleteCostume = async function(id){
+  if(confirm("Remover este estilo de roupa? Todos os registros serão apagados."))
+    await remove(ref(db,`costumes/${id}`));
 };
-window.saveRecord = async function(){
-  const costumeId=document.getElementById("record-costume-id").value;
-  const memberId=document.getElementById("record-member").value;
-  if(!memberId){ alert("Selecione um membro"); return; }
-  const status=document.getElementById("record-status").value;
-  const notes=document.getElementById("record-notes").value.trim();
-  const date=new Date().toISOString().slice(0,10);
-  const existing=state.costumes[costumeId]?.items;
-  let existingKey=null;
-  if(existing) existingKey=Object.keys(existing).find(k=>existing[k].memberId===memberId);
-  if(existingKey) await update(ref(db,`costumes/${costumeId}/items/${existingKey}`),{status,notes,date});
-  else            await push(ref(db,`costumes/${costumeId}/items`),{memberId,status,notes,date});
-  closeModal("modal-record");
+
+// ── modal: registrar status de uma bailarina ──
+window.openStatusModal = function(costumeId, memberId){
+  const a = getAssign(costumeId, memberId);
+  const m = getMember(memberId);
+  const am = activeMembers().filter(x => x.id !== memberId);
+  document.getElementById("status-costume-id").value  = costumeId;
+  document.getElementById("status-member-id").value   = memberId;
+  document.getElementById("status-modal-title").textContent = `Figurino – ${m?.name||""}`;
+  document.getElementById("status-select").value = a.status||"na_igreja";
+  document.getElementById("status-notes").value  = a.notes||"";
+  // preenche select de para quem emprestar
+  const loanSel = document.getElementById("status-loan-to");
+  loanSel.innerHTML = `<option value="">Selecione a bailarina...</option>${am.map(x=>`<option value="${x.id}"${a.loanToId===x.id?" selected":""}>${esc(x.name)}</option>`).join("")}`;
+  toggleLoanField();
+  openModal("modal-status");
 };
-window.removeCostumeItem = async function(costumeId,kid){ await remove(ref(db,`costumes/${costumeId}/items/${kid}`)); };
+window.toggleLoanField = function(){
+  const v = document.getElementById("status-select").value;
+  document.getElementById("loan-field").style.display = v==="emprestado" ? "block" : "none";
+};
+window.saveStatus = async function(){
+  const costumeId = document.getElementById("status-costume-id").value;
+  const memberId  = document.getElementById("status-member-id").value;
+  const status    = document.getElementById("status-select").value;
+  const notes     = document.getElementById("status-notes").value.trim();
+  const loanToId  = document.getElementById("status-loan-to").value;
+  const date      = new Date().toISOString().slice(0,10);
+
+  if(status==="emprestado"){
+    if(!loanToId){ alert("Selecione para quem vai emprestar"); return; }
+    // atualiza quem emprestou
+    await set(ref(db,`costumes/${costumeId}/assignments/${memberId}`),
+      {status:"emprestado", loanToId, date, notes});
+    // atualiza quem recebeu
+    await set(ref(db,`costumes/${costumeId}/assignments/${loanToId}`),
+      {status:"recebido", loanFromId:memberId, date, notes:""});
+  } else {
+    // se estava emprestado, limpa o lado de quem recebeu
+    const prev = getAssign(costumeId, memberId);
+    if(prev.status==="emprestado" && prev.loanToId){
+      await set(ref(db,`costumes/${costumeId}/assignments/${prev.loanToId}`),
+        {status:"na_igreja", date});
+    }
+    await set(ref(db,`costumes/${costumeId}/assignments/${memberId}`),
+      {status, date, notes});
+  }
+  closeModal("modal-status");
+};
+
+// ── devolver roupa emprestada (zera os dois lados) ──
+window.returnLoan = async function(costumeId, lenderMemberId){
+  const a = getAssign(costumeId, lenderMemberId);
+  const date = new Date().toISOString().slice(0,10);
+  // zera quem emprestou
+  await set(ref(db,`costumes/${costumeId}/assignments/${lenderMemberId}`),
+    {status:"na_igreja", date});
+  // zera quem recebeu
+  if(a.loanToId){
+    await set(ref(db,`costumes/${costumeId}/assignments/${a.loanToId}`),
+      {status:"na_igreja", date});
+  }
+};
+
+// ── devolver para a igreja (em_casa → na_igreja) ──
+window.returnToChurch = async function(costumeId, memberId){
+  const date = new Date().toISOString().slice(0,10);
+  await set(ref(db,`costumes/${costumeId}/assignments/${memberId}`),
+    {status:"na_igreja", date});
+};
 
 // ── ANIVERSÁRIOS ──────────────────────────────────────────────────────────────
 function renderAniversarios(){
   const el=document.getElementById("panel-aniversarios");
   const today=new Date(), todayDay=today.getDate(), todayMonth=today.getMonth()+1;
   const all=Object.entries(state.members).map(([id,m])=>({id,...m})).filter(m=>m.active&&m.dataNascimento);
-
   if(all.length===0){
     el.innerHTML=`<div class="sec-title"><div><h2>🎂 Aniversariantes</h2></div></div>
       <div class="empty"><div style="font-size:48px;margin-bottom:8px">🎂</div><p>Cadastre datas de nascimento nos membros para ver aqui</p></div>`;
     return;
   }
-
   all.sort((a,b)=>{ const [,am,ad]=a.dataNascimento.split("-").map(Number),[,bm,bd]=b.dataNascimento.split("-").map(Number); return am!==bm?am-bm:ad-bd; });
   const todayBdays=all.filter(m=>{ const [,mo,d]=m.dataNascimento.split("-").map(Number); return mo===todayMonth&&d===todayDay; });
   const byMonth={};
   all.forEach(m=>{ const [,mo]=m.dataNascimento.split("-").map(Number); if(!byMonth[mo]) byMonth[mo]=[]; byMonth[mo].push(m); });
-
   const wppIcon=`<svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.116 1.524 5.847L0 24l6.344-1.498A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.651-.502-5.176-1.381l-.371-.22-3.768.89.937-3.658-.242-.381A9.944 9.944 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>`;
-
   const bdayWppBtn=(num,label,bg,name)=>{
     const clean=num.replace(/\D/g,"");
     const msg=encodeURIComponent(`🎂 Feliz aniversário, ${name}! Que Deus te abençoe muito! 🎉`);
     return `<a class="wpp-btn" style="background:${bg}" href="https://wa.me/55${clean}?text=${msg}" target="_blank">${wppIcon} ${label}</a>`;
   };
-
   let html=`<div class="sec-title"><div><h2>🎂 Aniversariantes</h2><p>${all.length} membro(s) com data cadastrada</p></div></div>`;
-
   if(todayBdays.length>0){
     todayBdays.forEach(m=>{
       const [y]=m.dataNascimento.split("-").map(Number);
       const age=today.getFullYear()-y;
-      html+=`<div class="bday-today">
-        <div class="bday-emoji">🎉</div>
+      html+=`<div class="bday-today"><div class="bday-emoji">🎉</div>
         <h3>Hoje é aniversário de ${esc(m.name)}!</h3>
         <p>${age} anos · ${ROLE_LABEL[m.role]||"🩰 Bailarina"}</p>
         <div style="display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap">
           ${m.whatsapp?bdayWppBtn(m.whatsapp,"Bailarina","#25D366",m.name):""}
           ${m.whatsappMae?bdayWppBtn(m.whatsappMae,"Mãe","#854278",m.name):""}
-        </div>
-      </div>`;
+        </div></div>`;
     });
   }
-
   Object.keys(byMonth).sort((a,b)=>a-b).forEach(mo=>{
     html+=`<div class="month-label">📅 ${MONTHS_PT[mo-1]}</div>`;
     byMonth[mo].forEach(m=>{
@@ -754,7 +869,6 @@ function renderAniversarios(){
       </div>`;
     });
   });
-
   el.innerHTML=html;
 }
 
@@ -906,14 +1020,17 @@ render();
   </div>
 </div>
 
-<!-- MODAL: COSTUME -->
+<!-- MODAL: COSTUME (novo/editar estilo) -->
 <div class="modal-overlay" id="modal-costume">
   <div class="modal">
-    <div class="modal-header"><span id="costume-modal-title">Novo Figurino</span><button class="btn-icon" onclick="closeModal('modal-costume')">✕</button></div>
+    <div class="modal-header"><span id="costume-modal-title">Novo Estilo de Roupa</span>
+      <button class="btn-icon" onclick="closeModal('modal-costume')">✕</button></div>
     <div class="modal-body">
       <input type="hidden" id="costume-id">
-      <div class="field"><label>Nome do figurino *</label><input id="costume-name" placeholder="Ex: Tutu Branco – Adoração"></div>
-      <div class="field"><label>Descrição</label><input id="costume-desc" placeholder="Ex: Tutu branco com corpete bordado, tam. M"></div>
+      <div class="field"><label>Nome do estilo *</label>
+        <input id="costume-name" placeholder="Ex: Tutu Rosa, Vestido Branco, Roupa de Louvor"></div>
+      <div class="field"><label>Descrição (opcional)</label>
+        <input id="costume-desc" placeholder="Ex: Saia rodada com corpete bordado"></div>
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="closeModal('modal-costume')">Cancelar</button>
         <button class="btn btn-primary" onclick="saveCostume()">Salvar</button>
@@ -922,25 +1039,30 @@ render();
   </div>
 </div>
 
-<!-- MODAL: RECORD -->
-<div class="modal-overlay" id="modal-record">
+<!-- MODAL: STATUS / EMPRÉSTIMO -->
+<div class="modal-overlay" id="modal-status">
   <div class="modal">
-    <div class="modal-header"><span>Registrar Figurino</span><button class="btn-icon" onclick="closeModal('modal-record')">✕</button></div>
+    <div class="modal-header"><span id="status-modal-title">Registrar Figurino</span>
+      <button class="btn-icon" onclick="closeModal('modal-status')">✕</button></div>
     <div class="modal-body">
-      <input type="hidden" id="record-costume-id">
-      <div class="field"><label>Membro *</label><select id="record-member"></select></div>
-      <div class="field"><label>Status *</label>
-        <select id="record-status">
+      <input type="hidden" id="status-costume-id">
+      <input type="hidden" id="status-member-id">
+      <div class="field"><label>Status da roupa</label>
+        <select id="status-select" onchange="toggleLoanField()">
           <option value="na_igreja">🏛️ Na Igreja</option>
           <option value="em_casa">🏠 Levou p/ Casa</option>
-          <option value="devolvida">✅ Devolvida</option>
-          <option value="emprestada">🔄 Emprestada</option>
+          <option value="emprestado">🔄 Emprestar para outra bailarina</option>
         </select>
       </div>
-      <div class="field"><label>Observação</label><input id="record-notes" placeholder="Ex: Emprestado para a Maria no culto de 10/06"></div>
+      <div class="field" id="loan-field" style="display:none">
+        <label>Emprestar para qual bailarina? *</label>
+        <select id="status-loan-to"></select>
+      </div>
+      <div class="field"><label>Observação (opcional)</label>
+        <input id="status-notes" placeholder="Ex: Levou para ajustar o tamanho"></div>
       <div class="modal-actions">
-        <button class="btn btn-ghost" onclick="closeModal('modal-record')">Cancelar</button>
-        <button class="btn btn-primary" onclick="saveRecord()">Salvar</button>
+        <button class="btn btn-ghost" onclick="closeModal('modal-status')">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveStatus()">Salvar</button>
       </div>
     </div>
   </div>
