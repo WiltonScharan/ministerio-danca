@@ -403,7 +403,7 @@ function renderAttendance(){
         </div>
       </div>
       ${(()=>{
-        const eligible=membersForSession(cur.date);
+        const eligible=membersForSession(cur.date).sort((a,b)=>a.name.localeCompare(b.name,'pt'));
         if(eligible.length===0) return `<div style="padding:20px;text-align:center;color:var(--muted)">Nenhuma bailarina estava no ministério nesta data</div>`;
         return eligible.map(m=>{
           const rec=cur.records?Object.values(cur.records).find(r=>r.memberId===m.id):null;
