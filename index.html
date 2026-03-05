@@ -699,6 +699,7 @@ function costumeStyleCard(c){
                   <button class="btn btn-primary btn-sm" onclick="returnToChurch('${c.id}','${m.id}')">🏛️ Devolveu</button>`:""}
                 ${a.status==="emprestado"?`<button class="btn btn-primary btn-sm" onclick="returnLoan('${c.id}','${m.id}')">↩️ Devolvida</button>`:""}
                 ${a.status==="recebido"?`<button class="btn btn-primary btn-sm" onclick="returnLoan('${c.id}','${a.loanFromId}')">↩️ Devolver</button>`:""}
+                <button class="btn btn-danger btn-sm" onclick="removeMemberFromCostume('${c.id}','${m.id}')">🗑️</button>
               </div>
             </div>`;
           }).join("")
@@ -796,6 +797,15 @@ window.returnLoan=async function(costumeId,lenderMemberId){
 };
 window.returnToChurch=async function(costumeId,memberId){
   await set(ref(db,`costumes/${costumeId}/assignments/${memberId}`),{status:"na_igreja",date:new Date().toISOString().slice(0,10)});
+};
+window.removeMemberFromCostume=async function(costumeId,memberId){
+  if(!confirm("Remover esta bailarina do figurino?")) return;
+  // se ela estava emprestada para alguém, devolve o status da outra também
+  const a=getAssign(costumeId,memberId);
+  if(a.status==="emprestado"&&a.loanToId){
+    await remove(ref(db,`costumes/${costumeId}/assignments/${a.loanToId}`));
+  }
+  await remove(ref(db,`costumes/${costumeId}/assignments/${memberId}`));
 };
 
 // ── ANIVERSÁRIOS ──────────────────────────────────────────────────────────────
