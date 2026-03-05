@@ -284,8 +284,13 @@ function wppLink(num,label,name,isMae){
 
 function renderMembers(){
   const all=Object.entries(state.members).map(([id,m])=>({id,...m}));
-  const active=all.filter(m=>m.active).sort((a,b)=>a.name.localeCompare(b.name,'pt'));
-  const inactive=all.filter(m=>!m.active).sort((a,b)=>a.name.localeCompare(b.name,'pt'));
+  const roleOrder={lider:0,co_lider:1,auxiliar:2,membro:3};
+  const sortMembers=arr=>arr.sort((a,b)=>{
+    const rd=(roleOrder[a.role]??3)-(roleOrder[b.role]??3);
+    return rd!==0?rd:a.name.localeCompare(b.name,'pt');
+  });
+  const active=sortMembers(all.filter(m=>m.active));
+  const inactive=sortMembers(all.filter(m=>!m.active));
   const el=document.getElementById("panel-members");
   el.innerHTML=`
     <div class="sec-title">
