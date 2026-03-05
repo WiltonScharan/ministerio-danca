@@ -383,8 +383,12 @@ function renderAttendance(){
     ${filterBlock}
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
       ${sessions.map(s=>{
-        const cnt=s.records?Object.values(s.records).filter(r=>r.present).length:0;
-        const tot=s.records?Object.values(s.records).length:0;
+        const eligible=membersForSession(s.date);
+        const cnt=eligible.filter(m=>{
+          const rec=s.records?Object.values(s.records).find(r=>r.memberId===m.id):null;
+          return rec?.present||false;
+        }).length;
+        const tot=eligible.length;
         return `<div class="session-chip${s.id===selectedSession?" active":""}" onclick="selectSession('${s.id}')">
           <h4>${fmtDate(s.date)}</h4><p>${cnt}/${tot} presentes</p></div>`;
       }).join("")}
@@ -394,7 +398,7 @@ function renderAttendance(){
       <div style="background:var(--p);color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center">
         <div><b>Ensaio – ${fmtDate(cur.date)}</b>${cur.notes?`<div style="font-size:12px;opacity:.85">${esc(cur.notes)}</div>`:""}</div>
         <div style="display:flex;gap:8px;align-items:center">
-          <span style="font-size:13px">${cur.records?Object.values(cur.records).filter(r=>r.present).length:0}/${cur.records?Object.values(cur.records).length:0}</span>
+          <span style="font-size:13px">${(()=>{const el=membersForSession(cur.date);const p=el.filter(m=>{const rec=cur.records?Object.values(cur.records).find(r=>r.memberId===m.id):null;return rec?.present||false;}).length;return `${p}/${el.length}`;})()}</span>
           <button class="btn-icon" onclick="deleteSession('${cur.id}')">🗑️</button>
         </div>
       </div>
