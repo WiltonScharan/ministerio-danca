@@ -284,7 +284,8 @@ function wppLink(num,label,name,isMae){
 
 function renderMembers(){
   const all=Object.entries(state.members).map(([id,m])=>({id,...m}));
-  const active=all.filter(m=>m.active), inactive=all.filter(m=>!m.active);
+  const active=all.filter(m=>m.active).sort((a,b)=>a.name.localeCompare(b.name,'pt'));
+  const inactive=all.filter(m=>!m.active).sort((a,b)=>a.name.localeCompare(b.name,'pt'));
   const el=document.getElementById("panel-members");
   el.innerHTML=`
     <div class="sec-title">
@@ -370,7 +371,7 @@ function renderAttendance(){
       <h3>🔍 Histórico por bailarina</h3>
       <select onchange="setAttMemberFilter(this.value)">
         <option value="">Selecione uma bailarina...</option>
-        ${am.map(m=>`<option value="${m.id}" ${attMemberFilter===m.id?"selected":""}>${esc(m.name)}</option>`).join("")}
+        ${[...am].sort((a,b)=>a.name.localeCompare(b.name,'pt')).map(m=>`<option value="${m.id}" ${attMemberFilter===m.id?"selected":""}>${esc(m.name)}</option>`).join("")}
       </select>
       ${attMemberFilter?renderMemberHistory(attMemberFilter,sessions):""}
     </div>`;
