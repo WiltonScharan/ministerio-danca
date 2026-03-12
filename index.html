@@ -27,7 +27,6 @@
   .tab-panel{display:none}.tab-panel.active{display:block}
 
   .card{background:#fff;border-radius:12px;border:1px solid var(--border);padding:14px 16px;margin-bottom:10px}
-  .card-header{background:linear-gradient(135deg,var(--d),var(--p));color:#fff;padding:14px 16px;border-radius:12px 12px 0 0;display:flex;justify-content:space-between;align-items:center}
   .card-footer{padding:10px 16px;background:var(--light)}
 
   .sec-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
@@ -123,6 +122,25 @@
   .loan-info{font-size:11px;color:var(--muted);margin-top:2px}
   .add-member-row{padding:10px 16px;display:flex;align-items:center;justify-content:center;border-top:1px dashed var(--border);background:var(--light)}
 
+  /* FOTO DO FIGURINO */
+  .costume-thumb{width:56px;height:56px;border-radius:10px;object-fit:cover;border:2px solid rgba(255,255,255,.5);cursor:pointer;flex-shrink:0;transition:transform .15s}
+  .costume-thumb:hover{transform:scale(1.06)}
+  .costume-thumb-placeholder{width:56px;height:56px;border-radius:10px;border:2px dashed rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;cursor:pointer;background:rgba(255,255,255,.1)}
+
+  /* UPLOAD DE FOTO NO MODAL */
+  .photo-upload-area{border:2px dashed var(--border);border-radius:10px;padding:16px;text-align:center;cursor:pointer;background:var(--light);transition:border-color .2s}
+  .photo-upload-area:hover{border-color:var(--p)}
+  .photo-upload-area input{display:none}
+  .photo-current{position:relative;display:inline-block;margin-bottom:10px}
+  .photo-current img{width:100%;max-height:180px;object-fit:cover;border-radius:10px;border:1px solid var(--border)}
+  .photo-del-btn{position:absolute;top:6px;right:6px;background:#c62828;color:#fff;border:none;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:700;cursor:pointer}
+
+  /* LIGHTBOX */
+  #lightbox{display:none;position:fixed;inset:0;background:#000c;z-index:2000;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+  #lightbox.open{display:flex}
+  #lightbox img{max-width:92vw;max-height:82vh;border-radius:12px;object-fit:contain;box-shadow:0 8px 40px #0006}
+  #lightbox-close{background:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:14px;font-weight:700;cursor:pointer;color:var(--d)}
+
   /* ANIVERSÁRIOS */
   .bday-today{background:linear-gradient(135deg,#fff8e1,#fff3cd);border:2px solid #FFD600;border-radius:14px;padding:16px;margin-bottom:16px;text-align:center}
   .bday-today .bday-emoji{font-size:40px;margin-bottom:6px}
@@ -142,6 +160,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, onValue, set, push, remove, update }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
 
 const FIREBASE_CONFIG = {
   apiKey:            "AIzaSyCx6KXqx3Qhk8Y2J-FuxAVNUe0mkpb2RsY",
@@ -175,22 +194,17 @@ function initials(name){ return name.split(" ").map(n=>n[0]).slice(0,2).join("")
 function activeMembers(){ return Object.entries(state.members).filter(([,m])=>m.active).map(([id,m])=>({id,...m})); }
 function getMember(id){ const m=state.members[id]; return m?{id,...m}:null; }
 
-// ── bailarinas elegíveis para um ensaio (cadastradas antes ou na data) ──
 function membersForSession(sessionDate){
   return activeMembers().filter(m => !m.createdAt || m.createdAt <= sessionDate);
 }
-
-// ── bailarinas que já têm registro num figurino ──
 function membersWithCostume(costumeId){
   const assignments = state.costumes[costumeId]?.assignments || {};
   return activeMembers().filter(m => m.id in assignments);
 }
-// ── bailarinas que ainda NÃO têm registro num figurino ──
 function membersWithoutCostume(costumeId){
   const assignments = state.costumes[costumeId]?.assignments || {};
   return activeMembers().filter(m => !(m.id in assignments));
 }
-
 function getAssign(costumeId, memberId){
   return state.costumes[costumeId]?.assignments?.[memberId] || { status:"na_igreja" };
 }
@@ -276,7 +290,7 @@ function renderSummary(){
 }
 
 // ── MEMBERS ───────────────────────────────────────────────────────────────────
-function wppLink(num,label,name,isMae){
+function wppLink(num,label){
   const clean=num.replace(/\D/g,"");
   const wppIcon=`<svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.116 1.524 5.847L0 24l6.344-1.498A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.651-.502-5.176-1.381l-.371-.22-3.768.89.937-3.658-.242-.381A9.944 9.944 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>`;
   return `<a class="wpp-btn" href="https://wa.me/55${clean}" target="_blank">${wppIcon} ${label}</a>`;
@@ -317,8 +331,8 @@ function memberCard(m){
       ${bdayFmt?`<div style="font-size:12px;color:var(--muted)">🎂 ${bdayFmt}</div>`:""}
       ${m.createdAt?`<div style="font-size:11px;color:var(--muted)">📅 Entrou em ${fmtDate(m.createdAt)}</div>`:""}
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
-        ${m.whatsapp?wppLink(m.whatsapp,"Bailarina",m.name,false):""}
-        ${m.whatsappMae?wppLink(m.whatsappMae,"Mãe",m.name,true):""}
+        ${m.whatsapp?wppLink(m.whatsapp,"Bailarina"):""}
+        ${m.whatsappMae?wppLink(m.whatsappMae,"Mãe"):""}
       </div>
     </div>
     <div style="display:flex;gap:6px">
@@ -368,7 +382,7 @@ window.deleteMember = async function(id){
 function renderAttendance(){
   const sessions=Object.entries(state.attendance).map(([id,s])=>({id,...s})).sort((a,b)=>b.date.localeCompare(a.date));
   const cur=sessions.find(s=>s.id===selectedSession);
-  const am=activeMembers();
+  const am=[...activeMembers()].sort((a,b)=>a.name.localeCompare(b.name,'pt'));
   const el=document.getElementById("panel-attendance");
 
   const filterBlock=`
@@ -376,7 +390,7 @@ function renderAttendance(){
       <h3>🔍 Histórico por bailarina</h3>
       <select onchange="setAttMemberFilter(this.value)">
         <option value="">Selecione uma bailarina...</option>
-        ${[...am].sort((a,b)=>a.name.localeCompare(b.name,'pt')).map(m=>`<option value="${m.id}" ${attMemberFilter===m.id?"selected":""}>${esc(m.name)}</option>`).join("")}
+        ${am.map(m=>`<option value="${m.id}" ${attMemberFilter===m.id?"selected":""}>${esc(m.name)}</option>`).join("")}
       </select>
       ${attMemberFilter?renderMemberHistory(attMemberFilter,sessions):""}
     </div>`;
@@ -514,8 +528,7 @@ window.openPlayer=function(id,encodedUrl){
     iframe=`<div style="position:relative;width:100%;padding-bottom:56.25%;height:0;overflow:hidden">
       <iframe style="position:absolute;top:0;left:0;width:100%;height:100%;border:none"
         src="https://www.youtube.com/embed/${yt}?autoplay=1"
-        allow="autoplay;encrypted-media" allowfullscreen></iframe>
-    </div>`;
+        allow="autoplay;encrypted-media" allowfullscreen></iframe></div>`;
   else if(lt==="spotify"&&sp)
     iframe=`<iframe src="${sp}" height="152" allow="autoplay;encrypted-media" style="width:100%;border:none"></iframe>`;
   else
@@ -624,7 +637,9 @@ window.saveChoreo=async function(){
 window.updateChoreoStatus=async function(id,status){ await update(ref(db,`choreographies/${id}`),{status}); };
 window.deleteChoreo=async function(id){ if(confirm("Remover coreografia?")) await remove(ref(db,`choreographies/${id}`)); };
 
-// ── FIGURINOS ─────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+// ── FIGURINOS ─────────────────────────────────────────════
+// ══════════════════════════════════════════════════════════
 function renderCostumes(){
   const styles=Object.entries(state.costumes).map(([id,c])=>({id,...c}));
   const el=document.getElementById("panel-costumes");
@@ -662,10 +677,16 @@ function costumeStyleCard(c){
   const emprestado=assigns.filter(x=>x.a.status==="emprestado").length;
   const recebido=assigns.filter(x=>x.a.status==="recebido").length;
   const isOpen=openedCostume===c.id;
+
+  // thumbnail ou placeholder
+  const thumbHtml=c.photoURL
+    ? `<img class="costume-thumb" src="${esc(c.photoURL)}" alt="Foto" onclick="event.stopPropagation();openLightbox('${esc(c.photoURL)}')">`
+    : `<div class="costume-thumb-placeholder" onclick="event.stopPropagation();openCostumeModal('${c.id}')" title="Adicionar foto">📷</div>`;
+
   return `<div class="costume-style-card">
     <div class="costume-style-header${isOpen?" open":""}" onclick="toggleCostume('${c.id}')">
-      <div style="display:flex;align-items:center;gap:10px;flex:1">
-        ${tutuSVG(28,"#fff")}
+      <div style="display:flex;align-items:center;gap:12px;flex:1">
+        ${thumbHtml}
         <div>
           <div class="title">${esc(c.name)}</div>
           ${c.description?`<div class="subtitle">${esc(c.description)}</div>`:""}
@@ -720,25 +741,101 @@ function costumeStyleCard(c){
 
 window.toggleCostume=function(id){ openedCostume=openedCostume===id?null:id; renderCostumes(); };
 
+// ── FOTO: lightbox ──
+window.openLightbox=function(url){
+  document.getElementById("lightbox-img").src=url;
+  document.getElementById("lightbox").classList.add("open");
+};
+window.closeLightbox=function(){
+  document.getElementById("lightbox").classList.remove("open");
+  document.getElementById("lightbox-img").src="";
+};
+
+// ── MODAL FIGURINO (com foto) ──
 window.openCostumeModal=function(id){
   const c=id?state.costumes[id]:null;
   document.getElementById("costume-modal-title").textContent=c?"Editar Estilo":"Novo Estilo de Roupa";
   document.getElementById("costume-id").value=id||"";
   document.getElementById("costume-name").value=c?.name||"";
   document.getElementById("costume-desc").value=c?.description||"";
+  document.getElementById("costume-photo-input").value="";
+  document.getElementById("costume-photo-preview").innerHTML="";
+  // mostra foto atual se existir
+  const photoWrap=document.getElementById("costume-photo-current");
+  if(c?.photoURL){
+    photoWrap.innerHTML=`
+      <div class="photo-current">
+        <img src="${esc(c.photoURL)}" alt="Foto atual">
+        <button class="photo-del-btn" onclick="removeCostumePhoto('${id}')">🗑️ Remover foto</button>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:8px">Para substituir, selecione uma nova foto abaixo.</p>`;
+  } else {
+    photoWrap.innerHTML="";
+  }
   openModal("modal-costume");
 };
+
+// preview ao selecionar arquivo
+document.getElementById("costume-photo-input").addEventListener("change", function(){
+  const file=this.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    document.getElementById("costume-photo-preview").innerHTML=
+      `<img src="${e.target.result}" style="width:100%;max-height:160px;object-fit:cover;border-radius:8px;margin-top:8px;border:1px solid var(--border)">`;
+  };
+  reader.readAsDataURL(file);
+});
+
 window.saveCostume=async function(){
   const id=document.getElementById("costume-id").value;
   const name=document.getElementById("costume-name").value.trim();
   if(!name){ alert("Nome obrigatório"); return; }
   const desc=document.getElementById("costume-desc").value.trim();
-  if(id) await update(ref(db,`costumes/${id}`),{name,description:desc});
-  else   await push(ref(db,"costumes"),{name,description:desc,assignments:{}});
+  const file=document.getElementById("costume-photo-input").files[0];
+
+  let photoURL=id?state.costumes[id]?.photoURL||"":"";
+
+  if(file){
+    // reduz a imagem antes de salvar como base64
+    photoURL = await resizeImage(file, 800);
+  }
+
+  const data={name,description:desc,photoURL,assignments:id?(state.costumes[id]?.assignments||{}):{} };
+  if(id) await set(ref(db,`costumes/${id}`),data);
+  else   await push(ref(db,"costumes"),data);
   closeModal("modal-costume");
 };
+
+// redimensiona e converte para base64
+function resizeImage(file, maxSize){
+  return new Promise(resolve=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const canvas=document.createElement("canvas");
+        let w=img.width, h=img.height;
+        if(w>h){ if(w>maxSize){h=Math.round(h*maxSize/w);w=maxSize;} }
+        else    { if(h>maxSize){w=Math.round(w*maxSize/h);h=maxSize;} }
+        canvas.width=w; canvas.height=h;
+        canvas.getContext("2d").drawImage(img,0,0,w,h);
+        resolve(canvas.toDataURL("image/jpeg",0.82));
+      };
+      img.src=e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+window.removeCostumePhoto=async function(id){
+  if(!confirm("Remover a foto deste figurino?")) return;
+  await update(ref(db,`costumes/${id}`),{photoURL:""});
+  closeModal("modal-costume");
+};
+
 window.deleteCostume=async function(id){
-  if(confirm("Remover este estilo? Todos os registros serão apagados.")) await remove(ref(db,`costumes/${id}`));
+  if(!confirm("Remover este estilo? Todos os registros serão apagados.")) return;
+  await remove(ref(db,`costumes/${id}`));
 };
 
 window.openAddMemberCostume=function(costumeId){
@@ -806,11 +903,8 @@ window.returnToChurch=async function(costumeId,memberId){
 };
 window.removeMemberFromCostume=async function(costumeId,memberId){
   if(!confirm("Remover esta bailarina do figurino?")) return;
-  // se ela estava emprestada para alguém, devolve o status da outra também
   const a=getAssign(costumeId,memberId);
-  if(a.status==="emprestado"&&a.loanToId){
-    await remove(ref(db,`costumes/${costumeId}/assignments/${a.loanToId}`));
-  }
+  if(a.status==="emprestado"&&a.loanToId) await remove(ref(db,`costumes/${costumeId}/assignments/${a.loanToId}`));
   await remove(ref(db,`costumes/${costumeId}/assignments/${memberId}`));
 };
 
@@ -932,6 +1026,12 @@ render();
   <div id="panel-aniversarios"  class="tab-panel"></div>
 </div>
 
+<!-- LIGHTBOX -->
+<div id="lightbox" onclick="closeLightbox()">
+  <img id="lightbox-img" src="" alt="Foto do figurino">
+  <button id="lightbox-close" onclick="closeLightbox()">✕ Fechar</button>
+</div>
+
 <!-- MODAL: MEMBER -->
 <div class="modal-overlay" id="modal-member">
   <div class="modal">
@@ -1012,7 +1112,7 @@ render();
   </div>
 </div>
 
-<!-- MODAL: COSTUME -->
+<!-- MODAL: COSTUME (novo/editar estilo + foto) -->
 <div class="modal-overlay" id="modal-costume">
   <div class="modal">
     <div class="modal-header"><span id="costume-modal-title">Novo Estilo de Roupa</span>
@@ -1023,6 +1123,20 @@ render();
         <input id="costume-name" placeholder="Ex: Tutu Rosa, Vestido Branco"></div>
       <div class="field"><label>Descrição (opcional)</label>
         <input id="costume-desc" placeholder="Ex: Saia rodada com corpete bordado"></div>
+
+      <!-- Foto -->
+      <div class="field">
+        <label>📷 Foto do figurino</label>
+        <div id="costume-photo-current"></div>
+        <label class="photo-upload-area">
+          <input type="file" id="costume-photo-input" accept="image/*">
+          <div style="font-size:28px;margin-bottom:4px">📷</div>
+          <div style="font-size:13px;font-weight:600;color:var(--muted)">Clique para selecionar uma foto</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">JPG, PNG ou WEBP</div>
+        </label>
+        <div id="costume-photo-preview"></div>
+      </div>
+
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="closeModal('modal-costume')">Cancelar</button>
         <button class="btn btn-primary" onclick="saveCostume()">Salvar</button>
