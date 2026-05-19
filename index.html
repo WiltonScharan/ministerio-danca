@@ -641,7 +641,7 @@ window.deleteChoreo=async function(id){ if(confirm("Remover coreografia?")) awai
 // ── FIGURINOS ─────────────────────────────────────────════
 // ══════════════════════════════════════════════════════════
 function renderCostumes(){
-  const styles=Object.entries(state.costumes).map(([id,c])=>({id,...c}));
+  const styles=Object.entries(state.costumes).map(([id,c])=>({id,...c})).sort((a,b)=>a.name.localeCompare(b.name,'pt'));
   const el=document.getElementById("panel-costumes");
   if(styles.length===0){
     el.innerHTML=`
@@ -671,7 +671,7 @@ function renderCostumes(){
 function costumeStyleCard(c){
   const withCostume=membersWithCostume(c.id);
   const withoutCostume=membersWithoutCostume(c.id);
-  const assigns=withCostume.map(m=>({m,a:getAssign(c.id,m.id)}));
+  const assigns=withCostume.sort((a,b)=>a.name.localeCompare(b.name,'pt')).map(m=>({m,a:getAssign(c.id,m.id)}));
   const naIgreja=assigns.filter(x=>x.a.status==="na_igreja").length;
   const emCasa=assigns.filter(x=>x.a.status==="em_casa").length;
   const emprestado=assigns.filter(x=>x.a.status==="emprestado").length;
