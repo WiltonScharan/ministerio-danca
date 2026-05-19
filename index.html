@@ -858,7 +858,7 @@ window.saveAddMemberCostume=async function(){
 window.openStatusModal=function(costumeId,memberId){
   const a=getAssign(costumeId,memberId);
   const m=getMember(memberId);
-  const others=activeMembers().filter(x=>x.id!==memberId);
+  const others=activeMembers().filter(x=>x.id!==memberId).sort((a,b)=>a.name.localeCompare(b.name,'pt'));
   document.getElementById("status-costume-id").value=costumeId;
   document.getElementById("status-member-id").value=memberId;
   document.getElementById("status-modal-title").textContent=`Figurino – ${m?.name||""}`;
@@ -896,7 +896,7 @@ window.returnLoan=async function(costumeId,lenderMemberId){
   const a=getAssign(costumeId,lenderMemberId);
   const date=new Date().toISOString().slice(0,10);
   await set(ref(db,`costumes/${costumeId}/assignments/${lenderMemberId}`),{status:"na_igreja",date});
-  if(a.loanToId) await set(ref(db,`costumes/${costumeId}/assignments/${a.loanToId}`),{status:"na_igreja",date});
+  if(a.loanToId) await remove(ref(db,`costumes/${costumeId}/assignments/${a.loanToId}`));
 };
 window.returnToChurch=async function(costumeId,memberId){
   await set(ref(db,`costumes/${costumeId}/assignments/${memberId}`),{status:"na_igreja",date:new Date().toISOString().slice(0,10)});
