@@ -886,7 +886,7 @@ window.saveStatus=async function(){
   } else {
     const prev=getAssign(costumeId,memberId);
     if(prev.status==="emprestado"&&prev.loanToId){
-      await set(ref(db,`costumes/${costumeId}/assignments/${prev.loanToId}`),{status:"na_igreja",date});
+      await remove(ref(db,`costumes/${costumeId}/assignments/${prev.loanToId}`));
     }
     await set(ref(db,`costumes/${costumeId}/assignments/${memberId}`),{status,date,notes});
   }
